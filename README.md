@@ -34,3 +34,24 @@
     ├── script.js         # Frontend Logic
     ├── krishna_bg.jpg    # Landing Background
     └── texture_bg.jpg    # Day Background
+
+```
+
+---
+
+## 🚀 How to Run Locally
+
+Follow these steps to run **Divine Dialogue** on your computer.
+
+### 1. Prerequisites
+Make sure you have **Python** installed.
+
+### 2. Clone or Download
+Download this project folder to your computer.
+
+### 3. Install Flask
+Open your terminal (Command Prompt) and install the Flask framework:
+
+```bash
+pip install flask
+```
