@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapters | Bhagavad Gita</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+</head>
+<body class="chapters-body">
+
+    <nav class="navbar">
+        <a href="/" class="nav-logo">🕉 Gita Wisdom</a>
+    
+        <button onclick="askOracle()" class="oracle-btn">
+        ✨ Ask Krishna
+        </button>
+
+        <div class="toggle-wrapper" title="Switch to Cosmic View">
+            <input type="checkbox" id="cosmicToggle" onchange="toggleCosmicMode()">
+            <label for="cosmicToggle" class="toggle-label">
+                <span class="star-icon">🌌</span>
+                <span class="sun-icon">☀️</span>
+            </label>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="mood-section">
+            <h2 class="mood-title">How are you feeling today?</h2>
+            <div class="mood-bubbles">
+                <button class="mood-bubble anxious" onclick="askMood('anxious')">Anxious</button>
+                <button class="mood-bubble angry" onclick="askMood('angry')">Angry</button>
+                <button class="mood-bubble confused" onclick="askMood('confused')">Confused</button>
+                <button class="mood-bubble depressed" onclick="askMood('depressed')">Depressed</button>
+                <button class="mood-bubble lonely" onclick="askMood('lonely')">Lonely</button>
+                <button class="mood-bubble fearful" onclick="askMood('fearful')">Fearful</button>
+            </div>
+        </div>
+        <h2 class="page-header">The 18 Chapters of Wisdom</h2>
+        
+        <div class="chapters-grid">
+            {% for chapter in chapters %}
+            <div class="chapter-card" onclick="openChapter('{{ chapter.chapter_number }}')">
+    
+                <div class="card-header-row">
+                    <span class="card-number">Chapter {{ chapter.chapter_number }}</span>
+                    <span class="verse-count-badge">{{ chapter.verse_count }} Verses</span>
+                </div>
+
+                <h3>{{ chapter.title }}</h3>
+                <p class="card-translation">{{ chapter.translation }}</p>
+                <div class="card-decoration"></div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="readingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeChapter()">&times;</span>
+            
+            <div class="modal-header">
+                <h2 id="modalTitle">Chapter Title</h2>
+                <h4 id="modalSubtitle">Translation</h4>
+            </div>
+
+            <div class="modal-body" id="modalText">
+                <div class="loading-spinner">Loading Divine Text...</div>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast">Verse Copied to Clipboard! 🕉</div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-logo">🕉 Gita Wisdom</div>
+            <p class="footer-text">
+                &copy; 2026 Divine Dialogue Project. All Rights Reserved.
+            </p>
+            <p class="footer-text">
+                Designed with <span class="footer-heart">❤</span> & Devotion by <strong><a href="https://www.linkedin.com/in/ramavath-rahul-12542926a/" target="_blank" style="color: #fdfbf7;">Ramavath Rahul</a></strong>
+            </p>
+        </div>
+    </footer>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
