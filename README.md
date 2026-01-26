@@ -66,12 +66,16 @@ python app.py
 5. Open in Browser
 You will see a message saying "Running on http://127.0.0.1:5000". Open that link in Chrome or Edge.
 
-🎨 Customization
+---
+
+### 🎨 Customization
 Change Images: Replace krishna_bg.jpg or texture_bg.jpg in the static folder to change the backgrounds.
 
 Modify Verses: You can edit gita_data.json if you wish to correct or change translations.
 
-🙏 Credits
+---
+
+### 🙏 Credits
 Designed & Developed with Devotion by Rahul Rathod
 
 May this application bring peace and wisdom to all who visit.
