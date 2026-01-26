@@ -5,10 +5,10 @@ import os
 
 app = Flask(__name__)
 
-# --- LOAD DATA STARTUP ---
-# This replaces the database connection.
-# We load the file into memory once. It is very fast.
-DATA_FILE = 'gita_data.json'
+# --- LOAD DATA STARTUP (VERCEL FIX) ---
+# We use an absolute path so Vercel can find the file correctly.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_FILE = os.path.join(BASE_DIR, 'gita_data.json')
 
 if os.path.exists(DATA_FILE):
     with open(DATA_FILE, 'r', encoding='utf-8') as f:
@@ -23,9 +23,6 @@ def home():
 
 @app.route('/chapters')
 def chapters_page():
-    # In MongoDB we used projection to hide verses.
-    # In JSON, passing the whole object is fine, but if you want to be strict,
-    # we can create a lightweight list for the menu:
     chapters_summary = []
     for c in GITA_DATA:
         chapters_summary.append({
@@ -33,15 +30,12 @@ def chapters_page():
             "title": c["title"],
             "translation": c["translation"],
             "summary": c["summary"],
-            # NEW: Calculate length of the verses list
             "verse_count": len(c["verses"]) 
         })
     return render_template('chapters.html', chapters=chapters_summary)
 
 @app.route('/api/chapter/<int:chapter_num>')
 def get_chapter_text(chapter_num):
-    # Find the chapter in the list where chapter_number matches
-    # This replaces: collection.find_one(...)
     chapter = next((c for c in GITA_DATA if c["chapter_number"] == chapter_num), None)
     
     if chapter:
@@ -50,22 +44,18 @@ def get_chapter_text(chapter_num):
 
 @app.route('/api/oracle')
 def oracle():
-    # This Logic replaces the MongoDB Aggregation Pipeline ($unwind, $sample)
-    
     # 1. Flatten the list: Get all verses out of their chapters
     all_verses_flat = []
     
     for chapter in GITA_DATA:
         for verse in chapter['verses']:
-            # We create a new object that looks EXACTLY like the 
-            # MongoDB $project output your frontend expects
             verse_obj = {
                 "chapter_number": chapter['chapter_number'],
                 "title": chapter['title'],
                 "verse": verse['verse'],
                 "text": verse['text'],
-                "sanskrit": verse.get('sanskrit', ''),           # Includes Sanskrit
-                "transliteration": verse.get('transliteration', '') # Includes Transliteration
+                "sanskrit": verse.get('sanskrit', ''),           
+                "transliteration": verse.get('transliteration', '') 
             }
             all_verses_flat.append(verse_obj)
     
@@ -77,43 +67,42 @@ def oracle():
     return jsonify({"error": "The divine silence..."}), 404
 
 # --- MOOD MAPPING ---
-# Specific verses that address these emotions
 MOOD_MAP = {
     "anxious": [
-        {"chapter": 18, "verse": 66}, # Abandon all varieties of religion
-        {"chapter": 2, "verse": 47},  # You have a right to perform your prescribed duty
-        {"chapter": 9, "verse": 22},  # I carry what they lack
-        {"chapter": 2, "verse": 14}   # The nonpermanent appearance of happiness and distress
+        {"chapter": 18, "verse": 66},
+        {"chapter": 2, "verse": 47},
+        {"chapter": 9, "verse": 22},
+        {"chapter": 2, "verse": 14}
     ],
     "angry": [
-        {"chapter": 2, "verse": 63},  # From anger, complete delusion arises
-        {"chapter": 16, "verse": 21}, # There are three gates leading to this hell
-        {"chapter": 2, "verse": 56},  # One who is free from attachment, fear and anger
-        {"chapter": 5, "verse": 26}   # Those who are free from anger and all material desires
+        {"chapter": 2, "verse": 63},
+        {"chapter": 16, "verse": 21},
+        {"chapter": 2, "verse": 56},
+        {"chapter": 5, "verse": 26}
     ],
     "confused": [
-        {"chapter": 2, "verse": 7},   # Now I am confused about my duty
-        {"chapter": 18, "verse": 61}, # The Supreme Lord is situated in everyone's heart
-        {"chapter": 4, "verse": 34},  # Just try to learn the truth by approaching a spiritual master
-        {"chapter": 10, "verse": 10}  # To those who are constantly devoted... I give the understanding
+        {"chapter": 2, "verse": 7},
+        {"chapter": 18, "verse": 61},
+        {"chapter": 4, "verse": 34},
+        {"chapter": 10, "verse": 10}
     ],
     "depressed": [
-        {"chapter": 2, "verse": 3},   # Do not yield to this degrading impotence
-        {"chapter": 6, "verse": 5},   # One must deliver himself with the help of his mind
-        {"chapter": 2, "verse": 11},  # While speaking learned words, you are mourning 
-        {"chapter": 18, "verse": 58}  # If you become conscious of Me, you will pass over all obstacles
+        {"chapter": 2, "verse": 3},
+        {"chapter": 6, "verse": 5},
+        {"chapter": 2, "verse": 11},
+        {"chapter": 18, "verse": 58}
     ],
     "lonely": [
-        {"chapter": 9, "verse": 29},  # I envy no one, nor am I partial to anyone
-        {"chapter": 6, "verse": 30},  # For one who sees Me everywhere... I am never lost
-        {"chapter": 10, "verse": 20}, # I am the Self, seated in the hearts of all creatures
-        {"chapter": 13, "verse": 16}  # The Supreme Truth exists outside and inside of all living beings
+        {"chapter": 9, "verse": 29},
+        {"chapter": 6, "verse": 30},
+        {"chapter": 10, "verse": 20},
+        {"chapter": 13, "verse": 16}
     ],
     "fearful": [
-        {"chapter": 4, "verse": 10},  # Being freed from attachment, fear and anger
-        {"chapter": 2, "verse": 40},  # In this endeavor there is no loss or diminution
-        {"chapter": 11, "verse": 50}, # Be free from all disturbance
-        {"chapter": 18, "verse": 78}  # Wherever there is Krishna... there will also be victory
+        {"chapter": 4, "verse": 10},
+        {"chapter": 2, "verse": 40},
+        {"chapter": 11, "verse": 50},
+        {"chapter": 18, "verse": 78}
     ]
 }
 
