@@ -137,5 +137,18 @@ def get_mood_verse(emotion):
 
     return jsonify({"error": "Verse not found"}), 404
 
+# --- DEBUG ROUTE (Delete this later) ---
+@app.route('/debug-files')
+def debug_files():
+    import os
+    # List all files in the current directory on the server
+    files = os.listdir(os.getcwd())
+    return jsonify({
+        "current_directory": os.getcwd(),
+        "files_found": files,
+        "does_json_exist": os.path.exists(os.path.join(os.getcwd(), 'gita_data.json'))
+    })
+
 if __name__ == '__main__':
     app.run(debug=True)
+
