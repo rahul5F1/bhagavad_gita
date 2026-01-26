@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Srimad Bhagavad Gita</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+</head>
+<body class="landing-body">
+    
+    <div class="overlay">
+        <div class="landing-content" id="tiltBox">
+            <h1 class="main-title">Srimad Bhagavad Gita</h1>
+            <p class="subtitle">The Divine Song of God</p>
+            <div class="divider">🕉</div>
+            <a href="/chapters" class="enter-btn">Enter the Divine Dialogue</a>
+        </div>
+    </div>
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-logo">🕉 Gita Wisdom</div>
+            <p class="footer-text">
+                &copy; 2026 Divine Dialogue Project. All Rights Reserved.
+            </p>
+            <p class="footer-text">
+                Designed with <span class="footer-heart">❤</span> & Devotion by <strong><a href="https://www.linkedin.com/in/ramavath-rahul-12542926a/" target="_blank" style="color: #fdfbf7;">Ramavath Rahul</a></strong>
+            </p>
+        </div>
+    </footer>
+    <script>
+        const card = document.getElementById('tiltBox');
+        
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            
+            // Apply the rotation
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Reset when mouse leaves window (Optional polish)
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+            card.style.transition = "all 0.5s ease";
+        });
+        
+        // Remove transition during movement for smoothness
+        document.addEventListener('mouseenter', () => {
+            card.style.transition = "none";
+        });
+    </script>
+    
+</body>
+</html>
