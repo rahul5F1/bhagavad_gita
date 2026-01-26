@@ -1,4 +1,18 @@
 /* =========================================
+   GLOBAL RESET (Add this at the top!)
+   ========================================= */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Prevents side-scrolling */
+}
+
+/* =========================================
    1. CORE VARIABLES (DAY MODE DEFAULT)
    ========================================= */
 :root {
@@ -260,14 +274,17 @@ body.cosmic-mode::after {
    ========================================= */
 .navbar {
     background-color: var(--navbar-bg);
-    padding: 1rem 2rem;
-    text-align: center;
+    width: 100%;              /* FORCE Full Width */
+    padding: 1rem 1.5rem;     /* Slightly less padding to fit mobile better */
+    display: flex;            /* Flexbox makes layout easier */
+    justify-content: space-between; /* Spreads Logo and Controls apart */
+    align_items: center;      /* Centers them vertically */
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     position: sticky;
     top: 0;
     z-index: 100;
-    transition: background-color 0.5s;
+    box-sizing: border-box;   /* Critical Fix: Keeps padding inside the 100% width */
 }
 
 .nav-logo {
