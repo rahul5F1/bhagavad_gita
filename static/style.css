@@ -274,17 +274,16 @@ body.cosmic-mode::after {
    ========================================= */
 .navbar {
     background-color: var(--navbar-bg);
-    width: 100%;              /* FORCE Full Width */
-    padding: 1rem 1.5rem;     /* Slightly less padding to fit mobile better */
-    display: flex;            /* Flexbox makes layout easier */
-    justify-content: space-between; /* Spreads Logo and Controls apart */
-    align_items: center;      /* Centers them vertically */
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    width: 100%;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between; /* Pushes Logo Left, Controls Right */
+    align-items: center;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-sizing: border-box;   /* Critical Fix: Keeps padding inside the 100% width */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    box-sizing: border-box;
 }
 
 .nav-logo {
@@ -298,15 +297,15 @@ body.cosmic-mode::after {
 .nav-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 0;
 }
 
 /* Toggle Switch */
 .toggle-wrapper {
     position: relative;
-    width: 60px;        /* Fixed width */
-    height: 30px;       /* Fixed height */
-    flex-shrink: 0;     /* ⚠️ CRITICAL FIX: This stops it from getting squashed! */
+    width: 60px;
+    height: 30px;
+    flex-shrink: 0;
 }
 
 .toggle-wrapper input { 
@@ -360,22 +359,26 @@ input:checked + .toggle-label:before {
 /* =========================================
    MOBILE ADJUSTMENTS (Paste at the bottom of CSS)
    ========================================= */
-@media (max-width: 600px) {
-    /* 1. Make Logo smaller so it doesn't push everything */
+@media (max-width: 768px) {
+    /* On mobile, 'Absolute Center' might overlap the Logo. 
+       We make things smaller to fit them all in one line. */
+
     .nav-logo {
-        font-size: 1.1rem; 
+        font-size: 1rem;       /* Smaller Logo */
+        z-index: 2;            /* Ensures Logo sits above button if they touch */
     }
 
-    /* 2. Make "Ask Krishna" button smaller to fit mobile */
     .oracle-btn {
-        padding: 8px 12px;
-        font-size: 0.85rem;
-        margin-left: 10px; /* Less space */
+        padding: 6px 12px;     /* Smaller Button */
+        font-size: 0.8rem;
+        position: absolute;    /* Keep it centered */
+        left: 50%;
+        transform: translateX(-50%);
     }
 
-    /* 3. Ensure Navbar padding is tight */
-    .navbar {
-        padding: 0.8rem 1rem;
+    .toggle-wrapper {
+        transform: scale(0.8); /* Shrink the toggle slightly */
+        transform-origin: right center;
     }
 }
 
@@ -546,12 +549,21 @@ input:checked + .toggle-label:before {
 
 /* Oracle Button */
 .oracle-btn {
+    position: absolute;       /* Takes it out of the normal flow */
+    left: 50%;                /* Moves it to the middle */
+    transform: translateX(-50%); /* Centers it perfectly */
+    
+    /* Styling */
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white; border: 1px solid rgba(255,255,255,0.5);
-    padding: 10px 25px; border-radius: 30px;
-    font-family: 'Cinzel', serif; font-weight: bold; cursor: pointer;
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;      /* Prevents text from wrapping */
     box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
-    transition: all 0.4s ease; margin-left: 20px;
     animation: pulseOracle 3s infinite;
 }
 .oracle-btn:hover { transform: scale(1.1); box-shadow: 0 0 25px rgba(37, 117, 252, 0.8); }
