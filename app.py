@@ -8,8 +8,7 @@ app = Flask(__name__)
 # We are importing the data as a Python module. 
 # This guarantees Vercel cannot "lose" the file because it's code, not just a file.
 try:
-    import gita_data_source
-    GITA_DATA = gita_data_source.GITA_DATA_LIST
+    from gita_data_source import GITA_DATA_LIST as GITA_DATA
     print(f"✅ SUCCESSFULLY LOADED {len(GITA_DATA)} CHAPTERS.")
 except ImportError:
     # If this happens, it means gita_data_source.py is missing from GitHub.
@@ -120,3 +119,4 @@ def get_mood_verse(emotion):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
