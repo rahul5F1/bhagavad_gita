@@ -367,13 +367,22 @@ input:checked + .toggle-label:before {
     }
 
     .oracle-btn {
-        position: static; /* ⚠️ CRITICAL: Puts button back in the flow */
-        transform: none;  /* Remove the centering shift */
-        margin: 0 10px;   /* Add breathing room on sides */
+        /* RESET POSITION FOR MOBILE flow */
+        position: static;
+        transform: none; /* Remove desktop centering */
+        margin: 0 auto;
         
-        /* Make it fit nicely */
+        /* Mobile Sizing */
+        font-size: 0.75rem;
         padding: 8px 12px;
-        font-size: 0.8rem;
+    }
+    .oracle-btn:hover {
+        transform: scale(1.05);
+    }
+
+    /* MOBILE CLICK: Press effect */
+    .oracle-btn:active {
+        transform: scale(0.95);
     }
 
     .nav-logo {
@@ -573,8 +582,19 @@ input:checked + .toggle-label:before {
     box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
     animation: pulseOracle 3s infinite;
     z-index: 5;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
+    animation: pulseOracle 3s infinite;
 }
-.oracle-btn:hover { transform: scale(1.1); box-shadow: 0 0 25px rgba(37, 117, 252, 0.8); }
+
+.oracle-btn:hover {
+    transform: translateX(-50%) scale(1.1); 
+    box-shadow: 0 0 25px rgba(37, 117, 252, 0.8);
+}
+
+.oracle-btn:active {
+    transform: translateX(-50%) scale(0.95);
+}
 
 .sanskrit-text { color: var(--accent-primary); font-size: 1.3rem; font-weight: bold; text-align: center; margin-bottom: 5px; white-space: pre-line; }
 .transliteration-text { color: var(--text-muted); font-style: italic; text-align: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--accent-primary); }
