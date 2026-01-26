@@ -1,19 +1,33 @@
 from flask import Flask, render_template, jsonify
 import random
-import os
+import json
 
 app = Flask(__name__)
 
-# --- STRICT DATA IMPORT (THE FIX) ---
-# We are importing the data as a Python module. 
-# This guarantees Vercel cannot "lose" the file because it's code, not just a file.
+# ==========================================
+# NUCLEAR OPTION: EMBEDDED DATA
+# ==========================================
+
+# INSTRUCTIONS:
+# 1. Keep the triple quotes """ at the start and end.
+# 2. Paste your ENTIRE gita_data.json content inside.
+
+RAW_DATA = """
+PASTE_YOUR_JSON_DATA_HERE
+"""
+
+# ==========================================
+# END OF DATA
+# ==========================================
+
+# Convert the text string into actual Python data
 try:
-    from gita_data_source import GITA_DATA_LIST as GITA_DATA
-    print(f"✅ SUCCESSFULLY LOADED {len(GITA_DATA)} CHAPTERS.")
-except ImportError:
-    # If this happens, it means gita_data_source.py is missing from GitHub.
-    print("❌ CRITICAL ERROR: gita_data_source.py not found.")
+    GITA_DATA = json.loads(RAW_DATA)
+    print(f"✅ SUCCESSFULLY LOADED {len(GITA_DATA)} CHAPTERS from embedded text.")
+except Exception as e:
+    print(f"❌ CRITICAL ERROR parsing data: {e}")
     GITA_DATA = []
+
 
 @app.route('/')
 def home():
@@ -21,7 +35,6 @@ def home():
 
 @app.route('/chapters')
 def chapters_page():
-    # If data failed to load, return empty list to prevent crash
     if not GITA_DATA:
         return render_template('chapters.html', chapters=[])
 
@@ -119,4 +132,3 @@ def get_mood_verse(emotion):
 
 if __name__ == '__main__':
     app.run(debug=True)
-
