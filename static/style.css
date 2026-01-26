@@ -277,7 +277,7 @@ body.cosmic-mode::after {
     width: 100%;
     padding: 1rem 1.5rem;
     display: flex;
-    justify-content: space-between; /* Pushes Logo Left, Controls Right */
+    justify-content: space-between; /* Pushes Logo Left, Toggle Right */
     align-items: center;
     position: sticky;
     top: 0;
@@ -297,7 +297,6 @@ body.cosmic-mode::after {
 .nav-controls {
     display: flex;
     align-items: center;
-    gap: 0;
 }
 
 /* Toggle Switch */
@@ -305,7 +304,7 @@ body.cosmic-mode::after {
     position: relative;
     width: 60px;
     height: 30px;
-    flex-shrink: 0;
+    flex-shrink: 0
 }
 
 .toggle-wrapper input { 
@@ -360,24 +359,31 @@ input:checked + .toggle-label:before {
    MOBILE ADJUSTMENTS (Paste at the bottom of CSS)
    ========================================= */
 @media (max-width: 768px) {
-    /* On mobile, 'Absolute Center' might overlap the Logo. 
-       We make things smaller to fit them all in one line. */
-
-    .nav-logo {
-        font-size: 1rem;       /* Smaller Logo */
-        z-index: 2;            /* Ensures Logo sits above button if they touch */
+    /* RESET: On mobile, stop floating! Sit in the line properly. */
+    
+    .navbar {
+        padding: 0.8rem 1rem;
+        /* Flexbox will naturally space: Logo - Button - Toggle */
     }
 
     .oracle-btn {
-        padding: 6px 12px;     /* Smaller Button */
+        position: static; /* ⚠️ CRITICAL: Puts button back in the flow */
+        transform: none;  /* Remove the centering shift */
+        margin: 0 10px;   /* Add breathing room on sides */
+        
+        /* Make it fit nicely */
+        padding: 8px 12px;
         font-size: 0.8rem;
-        position: absolute;    /* Keep it centered */
-        left: 50%;
-        transform: translateX(-50%);
+    }
+
+    .nav-logo {
+        font-size: 1rem;
+        /* Allow logo to wrap if screen is TINY */
+        max-width: 100px; 
     }
 
     .toggle-wrapper {
-        transform: scale(0.8); /* Shrink the toggle slightly */
+        transform: scale(0.8); /* Shrink toggle slightly for phones */
         transform-origin: right center;
     }
 }
@@ -549,9 +555,10 @@ input:checked + .toggle-label:before {
 
 /* Oracle Button */
 .oracle-btn {
-    position: absolute;       /* Takes it out of the normal flow */
-    left: 50%;                /* Moves it to the middle */
-    transform: translateX(-50%); /* Centers it perfectly */
+    /* DESKTOP MODE: Float in the exact center */
+    position: absolute;       
+    left: 50%;                
+    transform: translateX(-50%); 
     
     /* Styling */
     background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
@@ -562,9 +569,10 @@ input:checked + .toggle-label:before {
     font-family: 'Cinzel', serif;
     font-weight: bold;
     cursor: pointer;
-    white-space: nowrap;      /* Prevents text from wrapping */
+    white-space: nowrap;
     box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
     animation: pulseOracle 3s infinite;
+    z-index: 5;
 }
 .oracle-btn:hover { transform: scale(1.1); box-shadow: 0 0 25px rgba(37, 117, 252, 0.8); }
 
