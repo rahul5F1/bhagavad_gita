@@ -6,22 +6,32 @@
     <title>Chapters | Bhagavad Gita</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="chapters-body">
 
     <nav class="navbar">
-        <a href="/" class="nav-logo">🕉 Gita Wisdom</a>
+        <a href="/" class="nav-logo">
+            <span class="om-icon">🕉️</span>
+            <div class="logo-text">
+                <span>GITA</span>
+                <span>WISDOM</span>
+            </div>
+        </a>
     
-        <button onclick="askOracle()" class="oracle-btn">
-        ✨ Ask Krishna
-        </button>
+        <div class="nav-controls">
+            <button onclick="askOracle()" class="oracle-btn">
+                ✨ Ask Krishna
+            </button>
 
-        <div class="toggle-wrapper" title="Switch to Cosmic View">
-            <input type="checkbox" id="cosmicToggle" onchange="toggleCosmicMode()">
-            <label for="cosmicToggle" class="toggle-label">
-                <span class="star-icon">🌌</span>
-                <span class="sun-icon">☀️</span>
-            </label>
+            <div class="toggle-wrapper" title="Switch to Cosmic View">
+                <input type="checkbox" id="cosmicToggle" onchange="toggleCosmicMode()">
+                <label for="cosmicToggle" class="toggle-label">
+                    <span class="star-icon">🌌</span>
+                    <span class="sun-icon">☀️</span>
+                </label>
+            </div>
         </div>
     </nav>
 
@@ -70,7 +80,9 @@
             </div>
         </div>
     </div>
+    
     <div id="toast" class="toast">Verse Copied to Clipboard! 🕉</div>
+
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-logo">🕉 Gita Wisdom</div>
@@ -82,6 +94,21 @@
             </p>
         </div>
     </footer>
+
+    <div id="printable-card-container">
+    
+        <img id="print-bg-image" src="{{ url_for('static', filename='images/quote-bg.jpg') }}" alt="Background" crossorigin="anonymous">
+
+        <div class="printable-card-content">
+            <div id="print-chapter-info"></div>
+            <div id="print-verse-num"></div>
+            <div id="print-sanskrit"></div>
+            <div id="print-transliteration"></div>
+            <div id="print-translation"></div>
+            <div class="print-footer">🕉 Gita Wisdom</div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
