@@ -2,9 +2,16 @@
 document.addEventListener("DOMContentLoaded", () => {
     const cards = document.querySelectorAll('.chapter-card');
     cards.forEach((card, index) => {
-        // Delay each card by 100ms * index (0ms, 100ms, 200ms...)
         card.style.animationDelay = `${index * 0.1}s`;
     });
+    
+    // Check Theme Preference
+    const savedTheme = localStorage.getItem("theme");
+    const toggle = document.getElementById("cosmicToggle");
+    if (savedTheme === "cosmic") {
+        document.body.classList.add("cosmic-mode");
+        if(toggle) toggle.checked = true;
+    }
 });
 
 // 2. Open Chapter Modal
@@ -29,16 +36,41 @@ function openChapter(chapterNum) {
                 modalSubtitle.innerText = data.translation;
                 
                 let versesHtml = "";
+                
                 data.verses.forEach(v => {
+                    // SAFE DATA PREPARATION
+                    // We escape quotes (&quot;) so they don't break the HTML attributes
+                    const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
+                    const safeText = v.text.replace(/"/g, '&quot;');
+                    const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
+                    const safeTitle = data.title.replace(/"/g, '&quot;');
+                    
                     versesHtml += `
-                        <div class="verse-item" onclick="copyVerse(this, '${v.verse}')" title="Click to Copy">
+                        <div class="verse-item">
                             <span class="verse-number">Verse ${v.verse}</span>
-            
                             <div class="sanskrit-text">${v.sanskrit}</div>
-            
                             <div class="transliteration-text">${v.transliteration}</div>
-            
                             <p class="translation-text">${v.text}</p>
+                            
+                            <div class="action-bar">
+                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
+                                    🔊 Listen
+                                </button>
+                                
+                                <button class="action-btn" onclick="copyVerse('${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
+                                    📋 Copy
+                                </button>
+                                
+                                <button class="action-btn" onclick="triggerDownload(this)"
+                                    data-chapter="${data.chapter_number}"
+                                    data-title="${safeTitle}"
+                                    data-verse="${v.verse}"
+                                    data-sanskrit="${safeSanskrit}"
+                                    data-transliteration="${safeTransliteration}"
+                                    data-translation="${safeText}">
+                                    📸 Download
+                                </button>
+                            </div>
                         </div>
                     `;
                 });
@@ -53,6 +85,7 @@ function openChapter(chapterNum) {
 
 // 3. Close Modal
 function closeChapter() {
+    window.speechSynthesis.cancel(); 
     const modal = document.getElementById("readingModal");
     modal.classList.remove("show");
     setTimeout(() => { modal.style.display = "none"; }, 400);
@@ -66,32 +99,6 @@ window.onclick = function(event) {
     }
 }
 
-// 5. Dynamic "Click to Copy" Feature
-function copyVerse(element, verseNum) {
-    const text = element.querySelector('p').innerText;
-    const fullText = `Bhagavad Gita Verse ${verseNum}: "${text}"`;
-
-    navigator.clipboard.writeText(fullText).then(() => {
-        showToast();
-        
-        // Visual feedback on the card itself
-        const originalBg = element.style.backgroundColor;
-        element.style.backgroundColor = "rgba(255, 215, 0, 0.4)"; // Flash darker gold
-        setTimeout(() => {
-            element.style.backgroundColor = ""; // Revert
-        }, 300);
-    });
-}
-
-// 6. Toast Notification Logic
-function showToast() {
-    const toast = document.getElementById("toast");
-    toast.className = "toast show";
-    setTimeout(function(){ 
-        toast.className = toast.className.replace("show", ""); 
-    }, 3000);
-}
-
 // --- ORACLE FUNCTION ---
 function askOracle() {
     const modal = document.getElementById("readingModal");
@@ -99,48 +106,55 @@ function askOracle() {
     const modalSubtitle = document.getElementById("modalSubtitle");
     const modalText = document.getElementById("modalText");
 
-    // Open Modal
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
 
-    // Loading State
     modalText.innerHTML = '<div style="text-align:center; padding: 50px; font-size: 1.5rem; color: var(--saffron);">Consulting the Divine...</div>';
     modalTitle.innerText = "Krishna Answers";
     modalSubtitle.innerText = "Reflect on this verse for your guidance";
 
-    // Fetch Random Verse
     fetch('/api/oracle')
         .then(response => response.json())
         .then(data => {
             modalTitle.innerText = `Guidance from Chapter ${data.chapter_number}`;
             modalSubtitle.innerText = data.title;
+            
+            const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
+            const safeText = data.text.replace(/"/g, '&quot;');
+            const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
+            const safeTitle = data.title.replace(/"/g, '&quot;');
 
-            // Render the single large verse
             modalText.innerHTML = `
                 <div style="text-align: center; padding: 2rem 0;">
                     <span style="font-family: 'Cinzel', serif; color: var(--saffron); font-size: 1.2rem; display: block; margin-bottom: 20px;">
                         Verse ${data.verse}
                     </span>
-
                     <div class="sanskrit-text" style="font-size: 1.5rem;">${data.sanskrit || ''}</div>
-        
                     <div class="transliteration-text">${data.transliteration || ''}</div>
-
                     <p style="font-size: 1.4rem; line-height: 1.8; font-style: italic; color: var(--krishna-blue); margin-top: 20px;">
                         "${data.text}"
                     </p>
-                    <div style="margin-top: 30px; font-size: 0.9rem; color: #666;">
-                        (Click the text to copy this message)
+                    
+                    <div class="action-bar">
+                        <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
+                            🔊 Listen
+                        </button>
+                        <button class="action-btn" onclick="copyVerse('${data.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
+                            📋 Copy
+                        </button>
+                        
+                        <button class="action-btn" onclick="triggerDownload(this)"
+                            data-chapter="${data.chapter_number}"
+                            data-title="${safeTitle}"
+                            data-verse="${data.verse}"
+                            data-sanskrit="${safeSanskrit}"
+                            data-transliteration="${safeTransliteration}"
+                            data-translation="${safeText}">
+                            📸 Download
+                        </button>
                     </div>
                 </div>
             `;
-            
-            // Add click-to-copy to the whole container
-            const container = modalText.querySelector('div');
-            container.onclick = function() { 
-                copyVerse(this, data.verse); 
-            };
-            container.style.cursor = "pointer";
         })
         .catch(err => {
             console.error(err);
@@ -155,16 +169,13 @@ function askMood(emotion) {
     const modalSubtitle = document.getElementById("modalSubtitle");
     const modalText = document.getElementById("modalText");
 
-    // Open Modal
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
 
-    // Initial Loading State
     modalText.innerHTML = '<div style="text-align:center; padding: 50px; font-size: 1.5rem; color: var(--saffron);">Finding comfort for your soul...</div>';
     modalTitle.innerText = "The Divine Remedy";
     modalSubtitle.innerText = `For when you are feeling ${emotion}`;
 
-    // Fetch Mood Verse
     fetch(`/api/mood/${emotion}`)
         .then(response => response.json())
         .then(data => {
@@ -173,33 +184,42 @@ function askMood(emotion) {
             } else {
                 modalTitle.innerText = `Chapter ${data.chapter_number}: ${data.title}`;
                 
-                // Render the Verse
+                const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
+                const safeText = data.text.replace(/"/g, '&quot;');
+                const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
+                const safeTitle = data.title.replace(/"/g, '&quot;');
+
                 modalText.innerHTML = `
                     <div style="text-align: center; padding: 2rem 0;">
                         <span style="font-family: 'Cinzel', serif; color: var(--saffron); font-size: 1.2rem; display: block; margin-bottom: 20px;">
                             Verse ${data.verse}
                         </span>
-
                         <div class="sanskrit-text" style="font-size: 1.5rem;">${data.sanskrit || ''}</div>
-                        
                         <div class="transliteration-text">${data.transliteration || ''}</div>
-
                         <p style="font-size: 1.4rem; line-height: 1.8; font-style: italic; color: var(--krishna-blue); margin-top: 20px;">
                             "${data.text}"
                         </p>
                         
-                        <div style="margin-top: 30px; font-size: 0.9rem; color: #666;">
-                            (Click to copy this remedy)
+                        <div class="action-bar">
+                            <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
+                                🔊 Listen
+                            </button>
+                            <button class="action-btn" onclick="copyVerse('${data.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
+                                📋 Copy
+                            </button>
+                            
+                            <button class="action-btn" onclick="triggerDownload(this)"
+                                data-chapter="${data.chapter_number}"
+                                data-title="${safeTitle}"
+                                data-verse="${data.verse}"
+                                data-sanskrit="${safeSanskrit}"
+                                data-transliteration="${safeTransliteration}"
+                                data-translation="${safeText}">
+                                📸 Download
+                            </button>
                         </div>
                     </div>
                 `;
-
-                // Enable Click to Copy
-                const container = modalText.querySelector('div');
-                container.onclick = function() { 
-                    copyVerse(this, data.verse); 
-                };
-                container.style.cursor = "pointer";
             }
         })
         .catch(err => {
@@ -215,46 +235,93 @@ function toggleCosmicMode() {
     
     if (toggle.checked) {
         body.classList.add("cosmic-mode");
-        localStorage.setItem("theme", "cosmic"); // Save preference
+        localStorage.setItem("theme", "cosmic"); 
     } else {
         body.classList.remove("cosmic-mode");
-        localStorage.setItem("theme", "day"); // Save preference
+        localStorage.setItem("theme", "day"); 
     }
 }
 
-// Check preference on load
-document.addEventListener("DOMContentLoaded", () => {
-    const savedTheme = localStorage.getItem("theme");
-    const toggle = document.getElementById("cosmicToggle");
-
-    if (savedTheme === "cosmic") {
-        document.body.classList.add("cosmic-mode");
-        if(toggle) toggle.checked = true;
-    }
-});
-
-// --- COPY TO CLIPBOARD FUNCTION ---
-function copyVerse(element, verseNum) {
-    // 1. Get the text to copy
-    // We try to find the text inside the clicked element
-    let textToCopy = element.innerText;
-    
-    // 2. Copy to Clipboard API
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        
-        // 3. GET THE TOAST ELEMENT
-        var toast = document.getElementById("toast");
-        
-        // 4. SHOW IT
-        toast.className = "show";
-        toast.innerText = "Verse Copied to Clipboard! 🕉";
-
-        // 5. HIDE IT AFTER 3 SECONDS (The Fix)
-        setTimeout(function(){ 
-            toast.className = toast.className.replace("show", ""); 
-        }, 3000);
-        
+// --- COPY FUNCTION ---
+function copyVerse(verseNum, textToCopy) {
+    const fullText = `Bhagavad Gita Verse ${verseNum}: "${textToCopy}"`;
+    navigator.clipboard.writeText(fullText).then(() => {
+        showToast("Verse Copied to Clipboard! 📋"); 
     }).catch(err => {
         console.error('Failed to copy: ', err);
+    });
+}
+
+// --- TOAST NOTIFICATION ---
+function showToast(message) {
+    var toast = document.getElementById("toast");
+    toast.className = "toast show";
+    toast.innerText = message || "Notification";
+    setTimeout(function(){ 
+        toast.className = toast.className.replace("show", ""); 
+    }, 3000);
+}
+
+/* =========================================
+   🔊 VOICE OF WISDOM (Sanskrit Engine)
+   ========================================= */
+function playAudio(text) {
+    window.speechSynthesis.cancel();
+    let cleanText = text.replace(/\|\|.*?\|\|/g, "").replace(/[0-9.-]/g, "").trim();
+    let utterance = new SpeechSynthesisUtterance(cleanText);
+    const voices = window.speechSynthesis.getVoices();
+    const hindiVoice = voices.find(v => v.lang.includes('hi'));
+    if (hindiVoice) { utterance.voice = hindiVoice; utterance.lang = 'hi-IN'; } 
+    else { utterance.lang = 'hi-IN'; }
+    utterance.rate = 0.85; 
+    utterance.pitch = 1.0; 
+    window.speechSynthesis.speak(utterance);
+}
+
+/* =========================================
+   📸 DOWNLOAD IMAGE FEATURE (Robut Fix)
+   ========================================= */
+// 1. Trigger Function: Reads data from the button and calls the generator
+function triggerDownload(btn) {
+    const chapNum = btn.getAttribute('data-chapter');
+    const chapTitle = btn.getAttribute('data-title');
+    const verseNum = btn.getAttribute('data-verse');
+    const sanskrit = btn.getAttribute('data-sanskrit');
+    const transliteration = btn.getAttribute('data-transliteration');
+    const translation = btn.getAttribute('data-translation');
+    
+    downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation);
+}
+
+// 2. Generator Function: Creates the image
+function downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation) {
+    showToast("Generating Image... 🎨");
+
+    // Populate the hidden card
+    document.getElementById('print-chapter-info').innerText = `Chapter ${chapNum}: ${chapTitle}`;
+    document.getElementById('print-verse-num').innerText = `Verse ${verseNum}`;
+    document.getElementById('print-sanskrit').innerText = sanskrit || "";
+    document.getElementById('print-transliteration').innerText = transliteration || "";
+    document.getElementById('print-translation').innerText = `"${translation}"`;
+
+    const container = document.getElementById('printable-card-container');
+
+    // Generate Screenshot
+    html2canvas(container, {
+        useCORS: true, // Needed for external images
+        scale: 2,       // High quality
+        backgroundColor: null // Keeps transparency/background logic handled by CSS
+    }).then(canvas => {
+        const imageUri = canvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.setAttribute("href", imageUri);
+        link.setAttribute("download", `Gita-Ch${chapNum}-V${verseNum}.png`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast("Image Downloaded! 📸");
+    }).catch(err => {
+        console.error("Image generation failed:", err);
+        showToast("Failed to generate image. 😞");
     });
 }
