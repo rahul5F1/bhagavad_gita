@@ -6,6 +6,8 @@
     <title>Srimad Bhagavad Gita</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="landing-body">
     
@@ -17,6 +19,7 @@
             <a href="/chapters" class="enter-btn">Enter the Divine Dialogue</a>
         </div>
     </div>
+
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-logo">🕉 Gita Wisdom</div>
@@ -28,6 +31,23 @@
             </p>
         </div>
     </footer>
+
+    <div id="printable-card-container">
+    
+        <img id="print-bg-image" src="{{ url_for('static', filename='images/quote-bg.jpg') }}" alt="Background" crossorigin="anonymous">
+
+        <div class="printable-card-content">
+            <div id="print-chapter-info"></div>
+            <div id="print-verse-num"></div>
+            <div id="print-sanskrit"></div>
+            <div id="print-transliteration"></div>
+            <div id="print-translation"></div>
+            <div class="print-footer">🕉 Gita Wisdom</div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
     <script>
         const card = document.getElementById('tiltBox');
         
