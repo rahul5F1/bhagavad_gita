@@ -9,6 +9,8 @@
 ## ✨ Key Features
 
 * **📖 Complete Wisdom:** Access all 18 Chapters and 700 Verses with Sanskrit text, Transliteration, and English translations.
+* **🔊 Voice of Wisdom:** Listen to the **Sanskrit Shlokas** chanted with authentic pronunciation (using advanced Text-to-Speech integration).
+* **📸 Insta-Wisdom:** Generate and **Download beautiful shareable cards** of any verse with a divine background, perfect for WhatsApp Status or Instagram.
 * **🩺 The Soul Doctor:** An interactive "Mood Tracker" that prescribes verses based on your emotions (Anxious, Angry, Confused, etc.).
 * **✨ The Oracle:** A "Random Verse" generator for divine guidance.
 * **🌌 Cosmic Mode:** A dynamic toggle that transforms the site into a Deep Space theme with twinkling stars.
