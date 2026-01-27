@@ -544,6 +544,7 @@ input:checked + .toggle-label:before {
     color: var(--navbar-text);
     padding: 20px 40px; text-align: center; flex-shrink: 0;
     border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-radius: 15px 15px 0 0;
 }
 
 .modal-body {
