@@ -325,3 +325,93 @@ function downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliterat
         showToast("Failed to generate image. 😞");
     });
 }
+
+/* =========================================
+   🔍 DHARMA SEARCH ENGINE
+   ========================================= */
+
+// 1. Handle "Enter" key press
+function handleEnter(event) {
+    if (event.key === "Enter") {
+        performSearch();
+    }
+}
+
+// 2. Perform the Search
+function performSearch() {
+    const query = document.getElementById("searchInput").value.trim();
+    if (!query) return;
+
+    // Use the existing Modal to show results
+    const modal = document.getElementById("readingModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalSubtitle = document.getElementById("modalSubtitle");
+    const modalText = document.getElementById("modalText");
+
+    // Open Modal
+    modal.style.display = "block";
+    setTimeout(() => modal.classList.add("show"), 10);
+
+    // Loading State
+    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Searching the Scriptures...</div>';
+    modalTitle.innerText = `Search Results`;
+    modalSubtitle.innerText = `Matches for "${query}"`;
+
+    // Fetch Results
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length === 0) {
+                modalText.innerHTML = `
+                    <div style="text-align:center; padding: 30px;">
+                        <p>No verses found containing "${query}".</p>
+                        <p style="font-size: 0.9rem; color: var(--text-muted);">Try searching for words like "Soul", "Duty", "Yoga", or "Time".</p>
+                    </div>`;
+            } else {
+                let versesHtml = `<p style="text-align:center; margin-bottom: 20px; color: var(--accent-primary);">${data.length} verses found</p>`;
+                
+                data.forEach(v => {
+                    // PREPARE DATA FOR BUTTONS (Reuse existing logic)
+                    const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
+                    const safeText = v.text.replace(/"/g, '&quot;');
+                    const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
+                    const safeTitle = v.chapter_title.replace(/"/g, '&quot;'); // Search result has title now
+                    
+                    versesHtml += `
+                        <div class="verse-item">
+                            <span class="verse-number">Chapter ${v.chapter_number}, Verse ${v.verse}</span>
+            
+                            <div class="sanskrit-text">${v.sanskrit}</div>
+                            <div class="transliteration-text">${v.transliteration}</div>
+                            <p class="translation-text">${v.text}</p>
+                            
+                            <div class="action-bar">
+                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
+                                    🔊 Listen
+                                </button>
+                                
+                                <button class="action-btn" onclick="copyVerse('${v.chapter_number}.${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
+                                    📋 Copy
+                                </button>
+                                
+                                <button class="action-btn" onclick="triggerDownload(this)"
+                                    data-chapter="${v.chapter_number}"
+                                    data-title="${safeTitle}"
+                                    data-verse="${v.verse}"
+                                    data-sanskrit="${safeSanskrit}"
+                                    data-transliteration="${safeTransliteration}"
+                                    data-translation="${safeText}">
+                                    📸 Download
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                modalText.innerHTML = versesHtml;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            modalText.innerHTML = "<p>Search failed. Please try again.</p>";
+        });
+}
