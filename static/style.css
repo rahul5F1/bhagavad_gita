@@ -416,20 +416,28 @@ input:checked + .toggle-label:before {
         padding: 20px; /* Ensure content doesn't hit the screen edge */
     }
     
-    /* Search Bar Mobile Fix */
-   .search-wrapper {
-        padding: 3px 3px 3px 15px; /* Tighter padding */
-    }
-   
-    #searchInput {
-        font-size: 1rem;
-        padding: 8px 0;
+    /* =========================================
+       FIX 2: MOBILE SEARCH BAR
+       ========================================= */
+    .search-section {
+        padding: 0 5px;
     }
 
-   .search-btn {
-        width: 38px;  /* Smaller circle */
-        height: 38px; /* Smaller circle */
-        font-size: 1rem; /* Smaller icon */
+    .search-wrapper {
+        /* Tight padding so button sits inside */
+        padding: 3px 3px 3px 15px; 
+    }
+
+    #searchInput {
+        font-size: 1rem;
+    }
+
+    .search-btn {
+        /* Reduce size so it fits inside the pill */
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+        margin-left: 5px;
     }
 }
 
@@ -445,24 +453,34 @@ input:checked + .toggle-label:before {
     z-index: 1;
 }
 
-/* --- NEW: DHARMA SEARCH BAR --- */
+/* =========================================
+   DHARMA SEARCH BAR (FIXED FOR MOBILE)
+   ========================================= */
 .search-section {
     margin-bottom: 2rem;
-    padding: 0 10px; /* Aligns with grid gap */
+    padding: 0 10px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .search-wrapper {
     display: flex;
     align-items: center;
+    justify-content: space-between; /* Keeps items spaced properly */
     background: var(--card-bg);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50px; /* Pill shape */
-    padding: 5px 5px 5px 20px;
+    border-radius: 50px; 
+    
+    /* FIX: Uniform padding to contain the button */
+    padding: 4px 4px 4px 20px; 
+    
     box-shadow: 0 5px 15px var(--card-shadow);
     transition: all 0.3s ease;
-    max-width: 800px; /* Prevents it from getting too wide on desktop */
-    margin: 0 auto;   /* Centers it */
+    width: 100%;
+    max-width: 600px; /* Optimal reading width */
+    margin: 0 auto;
 }
 
 .search-wrapper:hover, .search-wrapper:focus-within {
@@ -472,19 +490,23 @@ input:checked + .toggle-label:before {
 }
 
 #searchInput {
-    flex: 1;
+    flex: 1; /* Takes up all available space */
+    min-width: 0; /* CRITICAL FIX: Allows input to shrink so button fits */
     background: transparent;
     border: none;
     outline: none;
     font-family: 'Lora', serif;
     font-size: 1.1rem;
     color: var(--text-main);
-    padding: 10px;
+    padding: 10px 0; /* Remove side padding to avoid gaps */
 }
 
 #searchInput::placeholder {
     color: var(--text-muted);
     opacity: 0.7;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* nice dots if text is too long */
 }
 
 .search-btn {
@@ -492,9 +514,12 @@ input:checked + .toggle-label:before {
     color: white;
     border: none;
     border-radius: 50%;
-    width: 45px;
-    height: 45px;
-    font-size: 1.2rem;
+    
+    /* Desktop Size */
+    width: 42px;
+    height: 42px;
+    
+    font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
@@ -502,9 +527,9 @@ input:checked + .toggle-label:before {
     justify-content: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     
-    /* FIX 1: Prevent button from getting squished */
+    /* FIX: Stop button from squishing */
     flex-shrink: 0; 
-    margin-left: 10px; /* Add space between text and button */
+    margin-left: 8px; 
 }
 
 .search-btn:hover {
