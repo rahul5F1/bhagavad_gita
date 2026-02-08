@@ -1,417 +1,889 @@
-// 1. Staggered Entrance Animation on Load
-document.addEventListener("DOMContentLoaded", () => {
-    const cards = document.querySelectorAll('.chapter-card');
-    cards.forEach((card, index) => {
-        card.style.animationDelay = `${index * 0.1}s`;
-    });
-    
-    // Check Theme Preference
-    const savedTheme = localStorage.getItem("theme");
-    const toggle = document.getElementById("cosmicToggle");
-    if (savedTheme === "cosmic") {
-        document.body.classList.add("cosmic-mode");
-        if(toggle) toggle.checked = true;
-    }
-});
-
-// 2. Open Chapter Modal
-function openChapter(chapterNum) {
-    const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const modalText = document.getElementById("modalText");
-
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("show"), 10);
-
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Loading Divine Verses...</div>';
-
-    fetch(`/api/chapter/${chapterNum}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                modalText.innerHTML = "<p>Error loading chapter.</p>";
-            } else {
-                modalTitle.innerText = `Chapter ${data.chapter_number}: ${data.title}`;
-                modalSubtitle.innerText = data.translation;
-                
-                let versesHtml = "";
-                
-                data.verses.forEach(v => {
-                    // SAFE DATA PREPARATION
-                    // We escape quotes (&quot;) so they don't break the HTML attributes
-                    const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
-                    const safeText = v.text.replace(/"/g, '&quot;');
-                    const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
-                    const safeTitle = data.title.replace(/"/g, '&quot;');
-                    
-                    versesHtml += `
-                        <div class="verse-item">
-                            <span class="verse-number">Verse ${v.verse}</span>
-                            <div class="sanskrit-text">${v.sanskrit}</div>
-                            <div class="transliteration-text">${v.transliteration}</div>
-                            <p class="translation-text">${v.text}</p>
-                            
-                            <div class="action-bar">
-                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                                    🔊 Listen
-                                </button>
-                                
-                                <button class="action-btn" onclick="copyVerse('${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                                    📋 Copy
-                                </button>
-                                
-                                <button class="action-btn" onclick="triggerDownload(this)"
-                                    data-chapter="${data.chapter_number}"
-                                    data-title="${safeTitle}"
-                                    data-verse="${v.verse}"
-                                    data-sanskrit="${safeSanskrit}"
-                                    data-transliteration="${safeTransliteration}"
-                                    data-translation="${safeText}">
-                                    📸 Download
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                modalText.innerHTML = versesHtml;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>Failed to load content.</p>";
-        });
+/* =========================================
+   GLOBAL RESET (Add this at the top!)
+   ========================================= */
+* {
+    box-sizing: border-box;
 }
 
-// 3. Close Modal
-function closeChapter() {
-    window.speechSynthesis.cancel(); 
-    const modal = document.getElementById("readingModal");
-    modal.classList.remove("show");
-    setTimeout(() => { modal.style.display = "none"; }, 400);
-}
-
-// 4. Close on Click Outside
-window.onclick = function(event) {
-    const modal = document.getElementById("readingModal");
-    if (event.target == modal) {
-        closeChapter();
-    }
-}
-
-// --- ORACLE FUNCTION ---
-function askOracle() {
-    const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const modalText = document.getElementById("modalText");
-
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("show"), 10);
-
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; font-size: 1.5rem; color: var(--saffron);">Consulting the Divine...</div>';
-    modalTitle.innerText = "Krishna Answers";
-    modalSubtitle.innerText = "Reflect on this verse for your guidance";
-
-    fetch('/api/oracle')
-        .then(response => response.json())
-        .then(data => {
-            modalTitle.innerText = `Guidance from Chapter ${data.chapter_number}`;
-            modalSubtitle.innerText = data.title;
-            
-            const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
-            const safeText = data.text.replace(/"/g, '&quot;');
-            const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
-            const safeTitle = data.title.replace(/"/g, '&quot;');
-
-            modalText.innerHTML = `
-                <div style="text-align: center; padding: 2rem 0;">
-                    <span style="font-family: 'Cinzel', serif; color: var(--saffron); font-size: 1.2rem; display: block; margin-bottom: 20px;">
-                        Verse ${data.verse}
-                    </span>
-                    <div class="sanskrit-text" style="font-size: 1.5rem;">${data.sanskrit || ''}</div>
-                    <div class="transliteration-text">${data.transliteration || ''}</div>
-                    <p style="font-size: 1.4rem; line-height: 1.8; font-style: italic; color: var(--krishna-blue); margin-top: 20px;">
-                        "${data.text}"
-                    </p>
-                    
-                    <div class="action-bar">
-                        <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                            🔊 Listen
-                        </button>
-                        <button class="action-btn" onclick="copyVerse('${data.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                            📋 Copy
-                        </button>
-                        
-                        <button class="action-btn" onclick="triggerDownload(this)"
-                            data-chapter="${data.chapter_number}"
-                            data-title="${safeTitle}"
-                            data-verse="${data.verse}"
-                            data-sanskrit="${safeSanskrit}"
-                            data-transliteration="${safeTransliteration}"
-                            data-translation="${safeText}">
-                            📸 Download
-                        </button>
-                    </div>
-                </div>
-            `;
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>The connection to the divine was interrupted.</p>";
-        });
-}
-
-// --- MOOD DOCTOR FUNCTION ---
-function askMood(emotion) {
-    const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const modalText = document.getElementById("modalText");
-
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("show"), 10);
-
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; font-size: 1.5rem; color: var(--saffron);">Finding comfort for your soul...</div>';
-    modalTitle.innerText = "The Divine Remedy";
-    modalSubtitle.innerText = `For when you are feeling ${emotion}`;
-
-    fetch(`/api/mood/${emotion}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                modalText.innerHTML = "<p>Peace be with you. Try again later.</p>";
-            } else {
-                modalTitle.innerText = `Chapter ${data.chapter_number}: ${data.title}`;
-                
-                const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
-                const safeText = data.text.replace(/"/g, '&quot;');
-                const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
-                const safeTitle = data.title.replace(/"/g, '&quot;');
-
-                modalText.innerHTML = `
-                    <div style="text-align: center; padding: 2rem 0;">
-                        <span style="font-family: 'Cinzel', serif; color: var(--saffron); font-size: 1.2rem; display: block; margin-bottom: 20px;">
-                            Verse ${data.verse}
-                        </span>
-                        <div class="sanskrit-text" style="font-size: 1.5rem;">${data.sanskrit || ''}</div>
-                        <div class="transliteration-text">${data.transliteration || ''}</div>
-                        <p style="font-size: 1.4rem; line-height: 1.8; font-style: italic; color: var(--krishna-blue); margin-top: 20px;">
-                            "${data.text}"
-                        </p>
-                        
-                        <div class="action-bar">
-                            <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                                🔊 Listen
-                            </button>
-                            <button class="action-btn" onclick="copyVerse('${data.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                                📋 Copy
-                            </button>
-                            
-                            <button class="action-btn" onclick="triggerDownload(this)"
-                                data-chapter="${data.chapter_number}"
-                                data-title="${safeTitle}"
-                                data-verse="${data.verse}"
-                                data-sanskrit="${safeSanskrit}"
-                                data-transliteration="${safeTransliteration}"
-                                data-translation="${safeText}">
-                                📸 Download
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>Connection error.</p>";
-        });
-}
-
-// --- COSMIC TOGGLE LOGIC ---
-function toggleCosmicMode() {
-    const body = document.body;
-    const toggle = document.getElementById("cosmicToggle");
-    
-    if (toggle.checked) {
-        body.classList.add("cosmic-mode");
-        localStorage.setItem("theme", "cosmic"); 
-    } else {
-        body.classList.remove("cosmic-mode");
-        localStorage.setItem("theme", "day"); 
-    }
-}
-
-// --- COPY FUNCTION ---
-function copyVerse(verseNum, textToCopy) {
-    const fullText = `Bhagavad Gita Verse ${verseNum}: "${textToCopy}"`;
-    navigator.clipboard.writeText(fullText).then(() => {
-        showToast("Verse Copied to Clipboard! 📋"); 
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-    });
-}
-
-// --- TOAST NOTIFICATION ---
-function showToast(message) {
-    var toast = document.getElementById("toast");
-    toast.className = "toast show";
-    toast.innerText = message || "Notification";
-    setTimeout(function(){ 
-        toast.className = toast.className.replace("show", ""); 
-    }, 3000);
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden; /* Prevents side-scrolling */
 }
 
 /* =========================================
-   🔊 VOICE OF WISDOM (Sanskrit Engine)
+   1. CORE VARIABLES (DAY MODE DEFAULT)
    ========================================= */
-function playAudio(text) {
-    window.speechSynthesis.cancel();
-    let cleanText = text.replace(/\|\|.*?\|\|/g, "").replace(/[0-9.-]/g, "").trim();
-    let utterance = new SpeechSynthesisUtterance(cleanText);
-    const voices = window.speechSynthesis.getVoices();
-    const hindiVoice = voices.find(v => v.lang.includes('hi'));
-    if (hindiVoice) { utterance.voice = hindiVoice; utterance.lang = 'hi-IN'; } 
-    else { utterance.lang = 'hi-IN'; }
-    utterance.rate = 0.85; 
-    utterance.pitch = 1.0; 
-    window.speechSynthesis.speak(utterance);
-}
-
-/* =========================================
-   📸 DOWNLOAD IMAGE FEATURE (Robut Fix)
-   ========================================= */
-// 1. Trigger Function: Reads data from the button and calls the generator
-function triggerDownload(btn) {
-    const chapNum = btn.getAttribute('data-chapter');
-    const chapTitle = btn.getAttribute('data-title');
-    const verseNum = btn.getAttribute('data-verse');
-    const sanskrit = btn.getAttribute('data-sanskrit');
-    const transliteration = btn.getAttribute('data-transliteration');
-    const translation = btn.getAttribute('data-translation');
+:root {
+    /* --- DAY THEME COLORS --- */
+    --main-bg-color: #fdfbf7;       /* Parchment */
+    --main-bg-image: url('texture_bg.jpg'); 
     
-    downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation);
-}
-
-// 2. Generator Function: Creates the image
-function downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation) {
-    showToast("Generating Image... 🎨");
-
-    // Populate the hidden card
-    document.getElementById('print-chapter-info').innerText = `Chapter ${chapNum}: ${chapTitle}`;
-    document.getElementById('print-verse-num').innerText = `Verse ${verseNum}`;
-    document.getElementById('print-sanskrit').innerText = sanskrit || "";
-    document.getElementById('print-transliteration').innerText = transliteration || "";
-    document.getElementById('print-translation').innerText = `"${translation}"`;
-
-    const container = document.getElementById('printable-card-container');
-
-    // Generate Screenshot
-    html2canvas(container, {
-        useCORS: true, // Needed for external images
-        scale: 2,       // High quality
-        backgroundColor: null // Keeps transparency/background logic handled by CSS
-    }).then(canvas => {
-        const imageUri = canvas.toDataURL("image/png");
-        const link = document.createElement("a");
-        link.setAttribute("href", imageUri);
-        link.setAttribute("download", `Gita-Ch${chapNum}-V${verseNum}.png`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        showToast("Image Downloaded! 📸");
-    }).catch(err => {
-        console.error("Image generation failed:", err);
-        showToast("Failed to generate image. 😞");
-    });
+    /* Section Backgrounds (Unified in Day Mode) */
+    --navbar-bg: #0f1e3d;           /* Krishna Blue */
+    --card-bg: rgba(255, 255, 255, 0.95);
+    --mood-bg: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
+    --modal-bg: #fdfbf7;            /* Parchment */
+    
+    --card-border-top: #0f1e3d;
+    --card-shadow: rgba(0,0,0,0.1);
+    
+    --text-main: #2c1810;           /* Dark Brown */
+    --text-muted: #666;             /* Grey */
+    --text-header: #0f1e3d;         /* Deep Blue */
+    
+    --accent-primary: #D35400;      /* Saffron */
+    --accent-secondary: #FFD700;    /* Gold */
+    
+    --navbar-text: #FFD700;
+    --modal-overlay: rgba(0,0,0,0.8);
+    --footer-bg: #0f1e3d;
+    --footer-text: #fdfbf7;
 }
 
 /* =========================================
-   🔍 DHARMA SEARCH ENGINE
+   2. COSMIC MODE (NIGHT THEME VARIABLES)
+   ========================================= */
+body.cosmic-mode {
+    /* --- NIGHT THEME VARIABLES --- */
+    --main-bg-color: transparent;   /* Transparent so stars show through */
+    --main-bg-image: none;          
+    
+    /* 1. Navbar: Deep Midnight */
+    --navbar-bg: rgba(10, 15, 35, 0.95); 
+    --navbar-text: #00FFFF;         /* Neon Cyan */
+
+    /* 2. Chapter Cards: Deep Nebula Purple */
+    --card-bg: rgba(30, 20, 50, 0.7); 
+    --card-border-top: #FF00FF;     /* Neon Magenta */
+    --card-shadow: rgba(255, 0, 255, 0.15); /* Purple Glow */
+
+    /* 3. Soul Doctor: Deep Healing Teal */
+    --mood-bg: rgba(10, 40, 50, 0.7); 
+    --mood-border: #00FFFF;         /* Cyan Border */
+
+    /* 4. Oracle Modal: Deep Void */
+    --modal-bg: rgba(5, 5, 15, 0.98); 
+    --modal-overlay: rgba(0,0,0,0.9);
+
+    /* Text & Accents */
+    --text-main: #E0E0E0;           /* Soft White */
+    --text-muted: #A0A0A0;          /* Light Grey */
+    --text-header: #E0FFFF;         /* Cyan-White */
+    
+    --accent-primary: #FF00FF;      /* Neon Magenta */
+    --accent-secondary: #00FFFF;    /* Neon Cyan */
+    
+    --footer-bg: #020205;           /* Almost Black */
+    --footer-text: #8888AA;
+}
+
+/* =========================================
+   3. GLOBAL BASIC STYLES
+   ========================================= */
+body {
+    margin: 0;
+    font-family: 'Lora', serif;
+    overflow-x: hidden;
+    color: var(--text-main);
+    transition: color 0.5s ease, background-color 0.5s ease;
+}
+
+/* =========================================
+   4. LANDING PAGE STYLES
+   ========================================= */
+.landing-body {
+    min-height: 100vh;
+    width: 100%;
+    background-color: #000;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.landing-body::before {
+    content: '';
+    position: fixed; 
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: url('krishna_bg.jpg') no-repeat center center; 
+    background-size: cover;
+    opacity: 0.8;
+    z-index: 0; 
+    animation: slowZoom 20s infinite alternate;
+}
+
+@keyframes slowZoom {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.15); }
+}
+
+.overlay {
+    flex: 1; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative; 
+    z-index: 1;
+    width: 100%;
+    padding: 20px; 
+    box-sizing: border-box; 
+}
+
+.landing-content {
+    text-align: center;
+    color: var(--accent-secondary); 
+    width: 90%;
+    max-width: 600px;
+    padding: 3rem 2rem;
+    background: rgba(15, 30, 61, 0.4); 
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 20px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+    animation: slideUpFade 1.2s ease-out;
+    transform-style: preserve-3d;
+    perspective: 1000px;
+    z-index: 2;
+    margin: 2rem 0;
+}
+
+.main-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(2.5rem, 5vw, 4.5rem); 
+    margin: 0;
+    background: linear-gradient(to right, #FFD700, #FDB931, #FFD700);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0px 5px 15px rgba(0,0,0,0.5);
+    animation: float 4s ease-in-out infinite;
+    line-height: 1.2;
+}
+
+.subtitle {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: #f0f0f0;
+    margin-top: 1rem;
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+.enter-btn {
+    display: inline-block;
+    padding: 18px 50px;
+    margin-top: 20px;
+    background: linear-gradient(45deg, var(--accent-primary), #d35400);
+    color: white;
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-weight: bold;
+    border-radius: 50px;
+    border: 1px solid var(--accent-secondary);
+    transition: all 0.3s;
+    box-shadow: 0 0 20px rgba(211, 84, 0, 0.5);
+    animation: pulseGold 2s infinite;
+}
+
+.enter-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    background: linear-gradient(45deg, #d35400, var(--accent-primary));
+}
+
+/* =========================================
+   5. CHAPTERS PAGE & DYNAMIC STARS
    ========================================= */
 
-// 1. Handle "Enter" key press
-function handleEnter(event) {
-    if (event.key === "Enter") {
-        performSearch();
+.chapters-body {
+    background-color: var(--main-bg-color); 
+    background-image: var(--main-bg-image); 
+    background-size: cover; 
+    background-attachment: fixed; 
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: background 0.5s ease;
+    position: relative;
+    z-index: 1; /* Content sits above stars */
+}
+
+/* --- COSMIC MODE STAR SYSTEM --- */
+
+/* 1. The Deep Space Background Color (Applied to Body) */
+body.cosmic-mode {
+    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+    min-height: 100vh;
+    position: relative;
+}
+
+/* 2. Layer 1: Small Twinkling Stars */
+body.cosmic-mode::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    
+    /* Bright white stars */
+    background-image: 
+        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+        radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+        
+    background-size: 550px 550px, 350px 350px, 250px 250px;
+    background-position: 0 0, 40px 60px, 130px 270px;
+    
+    z-index: 0; /* Behind content */
+    pointer-events: none;
+    animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+/* 3. Layer 2: Moving Star Dust */
+body.cosmic-mode::after {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    
+    /* Fainter, moving stars */
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+        radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+        radial-gradient(2px 2px at 50px 160px, #ddd, transparent),
+        radial-gradient(2px 2px at 90px 40px, #fff, transparent);
+    
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    
+    z-index: 0;
+    opacity: 0.5;
+    animation: starDrift 100s linear infinite;
+}
+
+/* --- ANIMATIONS --- */
+@keyframes twinkle {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes starDrift {
+    from { transform: translateY(0); }
+    to { transform: translateY(-500px); }
+}
+
+/* =========================================
+   6. NAVBAR
+   ========================================= */
+.navbar {
+    background-color: var(--navbar-bg);
+    width: 100%;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between; /* Pushes Logo Left, Toggle Right */
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    box-sizing: border-box;
+}
+
+.nav-logo {
+    color: var(--navbar-text); 
+    text-decoration: none;
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+.nav-controls {
+    display: flex;
+    align-items: center;
+}
+
+/* Toggle Switch */
+.toggle-wrapper {
+    position: relative;
+    width: 60px;
+    height: 30px;
+    flex-shrink: 0
+}
+
+.toggle-wrapper input { 
+    opacity: 0; 
+    width: 0; 
+    height: 0; 
+}
+
+.toggle-label {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--accent-primary);
+    transition: .4s;
+    border-radius: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 5px;
+    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+}
+.toggle-label:before {
+    position: absolute;
+    content: "";
+    height: 22px;       /* Circle Size */
+    width: 22px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+/* Animation when checked (Night Mode) */
+input:checked + .toggle-label {
+    background-color: #4b0082;
+}
+
+input:checked + .toggle-label:before {
+    transform: translateX(30px); /* Moves circle to the right */
+}
+
+/* Icons inside the toggle */
+.star-icon, .sun-icon {
+    font-size: 14px;
+    z-index: 1;
+    color: white;
+}
+
+/* =========================================
+   MOBILE ADJUSTMENTS
+   ========================================= */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.8rem 1rem;
+    }
+
+    .oracle-btn {
+        /* RESET POSITION FOR MOBILE flow */
+        position: static;
+        transform: none; 
+        margin: 0 auto;
+        
+        /* Mobile Sizing */
+        font-size: 0.75rem;
+        padding: 8px 12px;
+    }
+    .oracle-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .oracle-btn:active {
+        transform: scale(0.95);
+    }
+
+    .nav-logo {
+        font-size: 1rem;
+    }
+    
+    .om-icon {
+        font-size: 1.5rem;
+    }
+
+    .toggle-wrapper {
+        transform: scale(0.8); 
+        transform-origin: right center;
+    }
+    .action-bar {
+        gap: 10px; /* Smaller gap between buttons */
+    }
+    
+    .action-btn {
+        font-size: 0.8rem;   /* Slightly smaller text */
+        padding: 8px 12px;   /* Slightly smaller padding */
+        flex: 1 1 auto;      /* Allows buttons to share space evenly */
+        min-width: 100px;    /* Prevents them from getting too tiny */
+    }
+    
+    .modal-body {
+        padding: 20px; /* Ensure content doesn't hit the screen edge */
+    }
+    
+    /* Search Bar Mobile Fix */
+    #searchInput {
+        font-size: 1rem;
     }
 }
 
-// 2. Perform the Search
-function performSearch() {
-    const query = document.getElementById("searchInput").value.trim();
-    if (!query) return;
+/* =========================================
+   7. MAIN CONTENT
+   ========================================= */
+.container {
+    max-width: 95%; 
+    margin: 2rem auto;
+    padding: 0 15px; 
+    flex: 1; 
+    position: relative;
+    z-index: 1;
+}
 
-    // Use the existing Modal to show results
-    const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const modalText = document.getElementById("modalText");
+/* --- NEW: DHARMA SEARCH BAR --- */
+.search-section {
+    margin-bottom: 2rem;
+    padding: 0 10px; /* Aligns with grid gap */
+}
 
-    // Open Modal
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("show"), 10);
+.search-wrapper {
+    display: flex;
+    align-items: center;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50px; /* Pill shape */
+    padding: 5px 5px 5px 20px;
+    box-shadow: 0 5px 15px var(--card-shadow);
+    transition: all 0.3s ease;
+    max-width: 800px; /* Prevents it from getting too wide on desktop */
+    margin: 0 auto;   /* Centers it */
+}
 
-    // Loading State
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Searching the Scriptures...</div>';
-    modalTitle.innerText = `Search Results`;
-    modalSubtitle.innerText = `Matches for "${query}"`;
+.search-wrapper:hover, .search-wrapper:focus-within {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px var(--card-shadow);
+    border-color: var(--accent-primary);
+}
 
-    // Fetch Results
-    fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.length === 0) {
-                modalText.innerHTML = `
-                    <div style="text-align:center; padding: 30px;">
-                        <p>No verses found containing "${query}".</p>
-                        <p style="font-size: 0.9rem; color: var(--text-muted);">Try searching for words like "Soul", "Duty", "Yoga", or "Time".</p>
-                    </div>`;
-            } else {
-                let versesHtml = `<p style="text-align:center; margin-bottom: 20px; color: var(--accent-primary);">${data.length} verses found</p>`;
-                
-                data.forEach(v => {
-                    // PREPARE DATA FOR BUTTONS (Reuse existing logic)
-                    const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
-                    const safeText = v.text.replace(/"/g, '&quot;');
-                    const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
-                    const safeTitle = v.chapter_title.replace(/"/g, '&quot;'); // Search result has title now
-                    
-                    versesHtml += `
-                        <div class="verse-item">
-                            <span class="verse-number">Chapter ${v.chapter_number}, Verse ${v.verse}</span>
-            
-                            <div class="sanskrit-text">${v.sanskrit}</div>
-                            <div class="transliteration-text">${v.transliteration}</div>
-                            <p class="translation-text">${v.text}</p>
-                            
-                            <div class="action-bar">
-                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                                    🔊 Listen
-                                </button>
-                                
-                                <button class="action-btn" onclick="copyVerse('${v.chapter_number}.${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                                    📋 Copy
-                                </button>
-                                
-                                <button class="action-btn" onclick="triggerDownload(this)"
-                                    data-chapter="${v.chapter_number}"
-                                    data-title="${safeTitle}"
-                                    data-verse="${v.verse}"
-                                    data-sanskrit="${safeSanskrit}"
-                                    data-transliteration="${safeTransliteration}"
-                                    data-translation="${safeText}">
-                                    📸 Download
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
-                modalText.innerHTML = versesHtml;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>Search failed. Please try again.</p>";
-        });
+#searchInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-family: 'Lora', serif;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    padding: 10px;
+}
+
+#searchInput::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.search-btn {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.search-btn:hover {
+    transform: scale(1.1) rotate(10deg);
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+}
+
+/* Page Header */
+.page-header {
+    text-align: center;
+    color: var(--text-header); 
+    font-family: 'Cinzel', serif;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    text-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+}
+
+.chapters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.chapter-card {
+    background: var(--card-bg);  
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px var(--card-shadow);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-top: 4px solid var(--card-border-top); 
+    position: relative;
+    overflow: hidden;
+    color: var(--text-main); 
+    backdrop-filter: blur(12px); 
+    animation: fadeInUp 0.6s ease forwards;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+.chapter-card h3 { margin-top: 0; color: var(--text-header); }
+
+.chapter-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 0 20px 40px var(--card-shadow);
+    border-top: 4px solid var(--accent-primary); 
+}
+
+.card-header-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.5rem; border-bottom: 1px dashed rgba(128,128,128,0.3);
+    padding-bottom: 8px;
+}
+.card-number {
+    font-family: 'Cinzel', serif;
+    color: var(--accent-primary);
+    font-weight: bold; margin: 0;
+}
+.verse-count-badge {
+    background-color: rgba(128,128,128, 0.2);
+    color: var(--text-main);
+    font-size: 0.8rem; padding: 4px 10px;
+    border-radius: 20px; font-weight: bold;
+}
+.card-translation {
+    color: var(--text-muted); 
+    font-style: italic; font-size: 0.9rem;
+}
+
+/* =========================================
+   8. SOUL DOCTOR
+   ========================================= */
+.mood-section {
+    text-align: center; margin-bottom: 3rem; padding: 2rem;
+    background: var(--mood-bg); 
+    border-radius: 15px; 
+    border: 1px dashed var(--accent-secondary);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+.mood-title { color: var(--text-header); font-family: 'Cinzel', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
+
+.mood-bubbles { display: flex; justify-content: center; flex-wrap: wrap; gap: 15px; }
+
+.mood-bubble {
+    border: none; padding: 12px 25px; border-radius: 50px;
+    font-family: 'Lora', serif; font-weight: bold; color: white;
+    cursor: pointer; transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    animation: floatBubble 3s ease-in-out infinite;
+}
+.mood-bubble.anxious { background: linear-gradient(135deg, #FF9966, #FF5E62); animation-delay: 0s; }
+.mood-bubble.angry { background: linear-gradient(135deg, #cb2d3e, #ef473a); animation-delay: 0.5s; }
+.mood-bubble.confused { background: linear-gradient(135deg, #8E2DE2, #4A00E0); animation-delay: 1s; }
+.mood-bubble.depressed { background: linear-gradient(135deg, #2c3e50, #bdc3c7); animation-delay: 1.5s; }
+.mood-bubble.lonely { background: linear-gradient(135deg, #56ab2f, #a8e063); animation-delay: 2s; }
+.mood-bubble.fearful { background: linear-gradient(135deg, #2193b0, #6dd5ed); animation-delay: 2.5s; }
+
+.mood-bubble:hover { transform: translateY(-5px) scale(1.1); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+/* =========================================
+   9. MODALS
+   ========================================= */
+.modal {
+    display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: var(--modal-overlay);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+.modal.show { opacity: 1; }
+
+.modal-content {
+    background-color: var(--modal-bg);
+    color: var(--text-main);
+    margin: 5vh auto; width: 80%; max-width: 900px; height: 90vh;
+    border-radius: 15px; display: flex; flex-direction: column;
+    box-shadow: 0 0 50px var(--accent-secondary);
+    border: 2px solid var(--accent-secondary);
+    transform: scale(0.8) translateY(30px);
+    opacity: 0;
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+
+.modal.show .modal-content {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+.modal-header {
+    background: var(--navbar-bg);
+    color: var(--navbar-text);
+    padding: 20px 40px; text-align: center; flex-shrink: 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    border-radius: 15px 15px 0 0;
+}
+
+.modal-body {
+    padding: 40px; overflow-y: auto; flex-grow: 1;
+    font-size: 1.1rem; line-height: 1.8;
+}
+
+.verse-item {
+    margin-bottom: 25px; padding: 15px; border-bottom: 1px solid rgba(128,128,128,0.2);
+    border-radius: 8px; transition: all 0.3s ease; cursor: pointer;
+    border-left: 3px solid transparent;
+}
+.verse-item:hover {
+    background-color: rgba(255, 215, 0, 0.1);
+    border-left: 3px solid var(--accent-primary);
+}
+.verse-number { color: var(--accent-primary); font-weight: bold; display: block; margin-bottom: 8px; }
+
+/* Oracle Button (Desktop Styles) */
+.oracle-btn {
+    position: absolute;       
+    left: 50%;                
+    transform: translateX(-50%); 
+    
+    /* Styling */
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
+    animation: pulseOracle 3s infinite;
+    z-index: 5;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
+    animation: pulseOracle 3s infinite;
+}
+
+.oracle-btn:hover {
+    transform: translateX(-50%) scale(1.1); 
+    box-shadow: 0 0 25px rgba(37, 117, 252, 0.8);
+}
+
+.oracle-btn:active {
+    transform: translateX(-50%) scale(0.95);
+}
+
+.sanskrit-text { color: var(--accent-primary); font-size: 1.3rem; font-weight: bold; text-align: center; margin-bottom: 5px; white-space: pre-line; }
+.transliteration-text { color: var(--text-muted); font-style: italic; text-align: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--accent-primary); }
+.translation-text { color: var(--text-main); font-size: 1.1rem; line-height: 1.6; text-align: left; }
+.close-btn { color: white; float: right; font-size: 28px; font-weight: bold; position: absolute; right: 20px; top: 15px; cursor: pointer; z-index: 1001; }
+.close-btn:hover { color: var(--accent-secondary); }
+
+/* =========================================
+   10. FOOTER
+   ========================================= */
+.site-footer {
+    background-color: var(--footer-bg);
+    color: var(--footer-text);
+    text-align: center; padding: 2rem 1rem; margin-top: auto;
+    border-top: 4px solid var(--accent-secondary);
+    position: relative; z-index: 10; width: 100%;
+}
+.footer-logo { font-family: 'Cinzel', serif; font-size: 1.5rem; color: var(--accent-secondary); text-decoration: none; margin-bottom: 5px; }
+.footer-text { font-family: 'Lora', serif; font-size: 0.9rem; opacity: 0.8; }
+.footer-heart { color: var(--accent-primary); animation: heartbeat 1.5s infinite; }
+
+/* =========================================
+   11. ANIMATION KEYFRAMES
+   ========================================= */
+@keyframes slideUpFade { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes pulseGold { 0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+@keyframes pulseOracle { 0% { box-shadow: 0 0 0 0 rgba(106, 17, 203, 0.4); } 50% { box-shadow: 0 0 0 10px rgba(0,0,0,0); } 100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); } }
+@keyframes floatBubble { 0% { transform: translateY(0px); } 50% { transform: translateY(-8px); } 100% { transform: translateY(0px); } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes heartbeat { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+
+/* Toast Notification */
+#toast {
+    visibility: hidden; 
+    opacity: 0;         
+    
+    min-width: 250px;
+    background-color: var(--navbar-bg); 
+    color: var(--accent-secondary);     
+    text-align: center;
+    border-radius: 50px;
+    padding: 16px;
+    position: fixed;
+    z-index: 2000;
+    
+    /* CENTERING LOGIC */
+    left: 50%;
+    bottom: 30px;
+    transform: translateX(-50%);
+    
+    font-size: 1rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    border: 1px solid var(--accent-secondary);
+    
+    transition: opacity 0.5s, bottom 0.5s, visibility 0.5s;
+}
+
+#toast.show {
+    visibility: visible;
+    opacity: 1;
+    bottom: 50px;
+}
+
+/* =========================================
+   ACTION BUTTONS (Audio & Copy & Download)
+   ========================================= */
+.action-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;             
+    margin-top: 20px;
+    flex-wrap: wrap; 
+    width: 100%;
+}
+
+.action-btn {
+    background: transparent;
+    border: 1px solid var(--accent-primary);
+    color: var(--text-color);
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Cinzel', serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center; /* Ensures text stays centered */
+    gap: 8px; 
+    transition: all 0.3s ease;
+    
+    /* FIX: Prevent buttons from sticking to edges */
+    margin: 5px;
+}
+
+.action-btn:hover {
+    background: var(--accent-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(106, 17, 203, 0.3);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+}
+
+.verse-item, .modal-text div {
+    cursor: default !important;
+}
+
+/* =========================================
+   INVISIBLE PRINTABLE CARD STYLES (UPDATED FOR IMAGE FIX)
+   ========================================= */
+#printable-card-container {
+    position: fixed;
+    left: -9999px;
+    top: 0;
+    width: 800px;
+    height: 800px;
+    z-index: -1;
+    
+    /* Flexbox centers the content */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    box-sizing: border-box;
+
+    /* Fallback color if image fails */
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    
+    position: fixed; 
+}
+
+/* 1. THE BACKGROUND IMAGE STYLE */
+#print-bg-image {
+    position: absolute; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+    z-index: 0;        
+}
+
+/* 2. THE CONTENT STYLE (Sits above image) */
+.printable-card-content {
+    z-index: 1; 
+    position: relative; 
+    
+    background: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    width: 90%;
+    height: 90%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    
+    /* Text Styles */
+    font-family: 'Cinzel', serif;
+    color: #ffffff;
+    text-align: center;
+}
+
+/* Individual text elements */
+#print-chapter-info {
+    font-size: 1.2rem;
+    color: #ffd700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#print-verse-num {
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 30px;
+}
+
+#print-sanskrit {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    line-height: 1.3;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+#print-transliteration {
+    font-size: 1.2rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 30px;
+}
+
+#print-translation {
+    font-size: 1.5rem;
+    line-height: 1.6;
+    font-weight: 500;
+    padding: 0 20px;
+}
+
+.print-footer {
+    font-size: 0.9rem;
+    color: #ffd700;
+    margin-top: auto;
+    padding-top: 20px;
+    opacity: 0.8;
 }
