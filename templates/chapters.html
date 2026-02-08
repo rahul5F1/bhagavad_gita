@@ -36,6 +36,16 @@
     </nav>
 
     <div class="container">
+        
+        <div class="search-section">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" placeholder="Search wisdom (e.g. Karma, Dhritarashtra, धर्म)..." onkeypress="handleEnter(event)">
+                <button class="search-btn" onclick="performSearch()">
+                    🔍
+                </button>
+            </div>
+        </div>
+
         <div class="mood-section">
             <h2 class="mood-title">How are you feeling today?</h2>
             <div class="mood-bubbles">
@@ -47,6 +57,7 @@
                 <button class="mood-bubble fearful" onclick="askMood('fearful')">Fearful</button>
             </div>
         </div>
+        
         <h2 class="page-header">The 18 Chapters of Wisdom</h2>
         
         <div class="chapters-grid">
@@ -96,7 +107,7 @@
     </footer>
 
     <div id="printable-card-container">
-    
+        
         <img id="print-bg-image" src="{{ url_for('static', filename='images/quote-bg.jpg') }}" alt="Background" crossorigin="anonymous">
 
         <div class="printable-card-content">
