@@ -56,7 +56,7 @@ Make sure you have **Python** installed.
 Download this project folder to your computer.
 
 ### 3. Install dependencies
-Open your terminal (Command Prompt) and install the Flask framework:
+Open your terminal (Command Prompt) and install the dependencies:
 
 ```bash
 pip install -r requirements.txt
