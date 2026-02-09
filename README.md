@@ -11,10 +11,14 @@
 * **📖 Complete Wisdom:** Access all 18 Chapters and 700 Verses with Sanskrit text, Transliteration, and English translations.
 * **🔊 Voice of Wisdom:** Listen to the **Sanskrit Shlokas** chanted with authentic pronunciation (using advanced Text-to-Speech integration).
 * **📸 Insta-Wisdom:** Generate and **Download beautiful shareable cards** of any verse with a divine background, perfect for WhatsApp Status or Instagram.
+* 🧠 Intelligent Chatbot: A real AI that roles-plays as Krishna using gemini-2.5-flash.
+* 🔮 Mystic Card Deck: A beautiful 3D tarot-style experience for random wisdom.
+* 🎵 Mantra Visualizer: Audio bars that dance when the verses are spoken.
 * **🩺 The Soul Doctor:** An interactive "Mood Tracker" that prescribes verses based on your emotions (Anxious, Angry, Confused, etc.).
 * 🔍 Dharma Search Engine: Instantly find specific verses by searching in English (meaning), Phonetic Transliteration (e.g., 'Karmanye'), or Original Sanskrit (Devanagari).
 * **✨ The Oracle:** A "Random Verse" generator for divine guidance.
 * **🌌 Cosmic Mode:** A dynamic toggle that transforms the site into a Deep Space theme with twinkling stars.
+* 🌌 Cosmic Gyroscope: A background that moves with your phone or mouse.
 * **📱 Fully Responsive:** Optimized for Mobile, Tablet, and Laptops.
 
 ---
@@ -52,11 +56,11 @@ Make sure you have **Python** installed.
 ### 2. Clone or Download
 Download this project folder to your computer.
 
-### 3. Install Flask
+### 3. Install dependencies
 Open your terminal (Command Prompt) and install the Flask framework:
 
 ```bash
-pip install flask
+pip install -r requirements.txt
 ```
 
 ### 4. Run the Application
