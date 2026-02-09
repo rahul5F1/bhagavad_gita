@@ -2,9 +2,19 @@ from flask import Flask, render_template, jsonify, request
 import json
 import random
 import os
-import unicodedata  # <--- NEW IMPORT
+import unicodedata
+from google import genai 
 
 app = Flask(__name__)
+
+# --- 🔑 CONFIGURE GEMINI AI ---
+GEMINI_API_KEY = "AIzaSyCCIk6DAQuyGHNwxm9K5BwpvCxzp4fiSu0" 
+
+try:
+    client = genai.Client(api_key=GEMINI_API_KEY)
+    print("✅ Gemini Client Configured")
+except Exception as e:
+    print(f"❌ Error configuring Gemini Client: {e}")
 
 # --- ROBUST DATA LOADING ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,16 +31,26 @@ if os.path.exists(DATA_FILE):
 else:
     print(f"❌ Error: File not found at {DATA_FILE}")
 
-# --- HELPER FUNCTION: REMOVE DIACRITICS ---
+# --- HELPER: REMOVE DIACRITICS ---
 def normalize_text(text):
-    """Converts 'kṛṣṇa' -> 'krsna', 'dhṛtarāṣṭra' -> 'dhrtarastra'"""
-    if not text:
-        return ""
-    # Normalize unicode characters to separate accent marks
+    if not text: return ""
     text = unicodedata.normalize('NFD', text)
-    # Filter out non-spacing mark characters (the accents)
     text = "".join([c for c in text if unicodedata.category(c) != 'Mn'])
     return text.lower().strip()
+
+# --- HELPER: FIND SPECIFIC VERSE ---
+def get_specific_verse(chapter, verse):
+    chap = next((c for c in GITA_DATA if c["chapter_number"] == chapter), None)
+    if chap:
+        v = next((v for v in chap["verses"] if v["verse"] == verse), None)
+        if v:
+            return {
+                "text": v["text"],
+                "chapter": chapter,
+                "verse": verse,
+                "sanskrit": v.get("sanskrit", "")
+            }
+    return None
 
 # --- ROUTES ---
 
@@ -61,31 +81,21 @@ def get_chapter_text(chapter_num):
         return jsonify(chapter)
     return jsonify({"error": "Chapter not found"}), 404
 
-# --- SEARCH API ENDPOINT (SMART SEARCH) ---
+# --- SEARCH API ---
 @app.route('/api/search')
 def search_verses():
-    # 1. Get query and normalize it (e.g., user types "krsna")
     raw_query = request.args.get('q', '')
     query = normalize_text(raw_query)
     
-    if not query:
-        return jsonify([]) 
+    if not query: return jsonify([]) 
     
     results = []
-    
     for chapter in GITA_DATA:
         for verse in chapter['verses']:
-            # 2. Get DB content and normalize it (e.g., "kṛṣṇa" becomes "krsna")
-            # English Text (Meaning)
             text_norm = normalize_text(verse.get('text', ''))
-            
-            # Transliteration (The English-Sanskrit)
             translit_norm = normalize_text(verse.get('transliteration', ''))
-            
-            # Sanskrit (The Devanagari)
             sanskrit_norm = normalize_text(verse.get('sanskrit', ''))
             
-            # 3. Check for matches
             if (query in text_norm) or (query in translit_norm) or (query in sanskrit_norm):
                 results.append({
                     'chapter_number': chapter['chapter_number'],
@@ -95,7 +105,6 @@ def search_verses():
                     'transliteration': verse.get('transliteration', ''),
                     'text': verse.get('text', '')
                 })
-    
     return jsonify(results)
 
 @app.route('/api/oracle')
@@ -114,9 +123,7 @@ def oracle():
             all_verses_flat.append(verse_obj)
     
     if all_verses_flat:
-        random_verse = random.choice(all_verses_flat)
-        return jsonify(random_verse)
-        
+        return jsonify(random.choice(all_verses_flat))
     return jsonify({"error": "The divine silence..."}), 404
 
 # --- MOOD MAP ---
@@ -136,20 +143,41 @@ def get_mood_verse(emotion):
     if not possible_verses: return jsonify({"error": "Emotion not found"}), 404
     
     target = random.choice(possible_verses)
-    chapter_data = next((c for c in GITA_DATA if c["chapter_number"] == target["chapter"]), None)
+    return jsonify(get_specific_verse(target["chapter"], target["verse"]))
+
+# --- 🤖 REALTIME KRISHNA CHAT ---
+@app.route('/api/chat', methods=['POST'])
+def chat_with_krishna():
+    user_message = request.json.get('message', '')
     
-    if chapter_data:
-        verse_data = next((v for v in chapter_data["verses"] if v["verse"] == target["verse"]), None)
-        if verse_data:
-            return jsonify({
-                "chapter_number": chapter_data["chapter_number"],
-                "title": chapter_data["title"],
-                "verse": verse_data["verse"],
-                "text": verse_data["text"],
-                "sanskrit": verse_data.get("sanskrit", ""),
-                "transliteration": verse_data.get("transliteration", "")
-            })
-    return jsonify({"error": "Verse not found"}), 404
+    if not user_message:
+        return jsonify({"reply": "My friend, silence is also an answer, but tell me what is on your mind?"})
+
+    system_instruction = """
+    You are Lord Krishna, the divine guide from the Bhagavad Gita.
+    - Your tone is compassionate, wise, calm, and slightly ancient but accessible.
+    - Address the user as "My friend" or "Partha" or "Arjuna".
+    - Answer their life problems using the wisdom of the Gita.
+    - Keep your answers concise (under 100 words).
+    - If appropriate, mention a specific Chapter and Verse number.
+    """
+
+    try:
+        # We use 'gemini-2.5-flash' here
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=f"{system_instruction}\n\nUser Question: {user_message}\nKrishna's Answer:"
+        )
+        
+        return jsonify({
+            "reply": response.text
+        })
+
+    except Exception as e:
+        print(f"❌ Gemini API Error: {e}")
+        return jsonify({
+            "reply": "My connection to the cosmic web is faint right now. Please try again in a moment."
+        })
 
 if __name__ == '__main__':
     app.run(debug=True)
