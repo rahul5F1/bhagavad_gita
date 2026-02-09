@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL RESET (Add this at the top!)
+   GLOBAL RESET
    ========================================= */
 * {
     box-sizing: border-box;
@@ -9,74 +9,130 @@ html, body {
     margin: 0;
     padding: 0;
     width: 100%;
-    overflow-x: hidden; /* Prevents side-scrolling */
+    overflow-x: hidden; 
 }
 
 /* =========================================
-   1. CORE VARIABLES (DAY MODE DEFAULT)
+   1. CORE VARIABLES
    ========================================= */
 :root {
-    /* --- DAY THEME COLORS --- */
-    --main-bg-color: #fdfbf7;       /* Parchment */
+    --main-bg-color: #fdfbf7;       
     --main-bg-image: url('texture_bg.jpg'); 
     
-    /* Section Backgrounds (Unified in Day Mode) */
-    --navbar-bg: #0f1e3d;           /* Krishna Blue */
+    --navbar-bg: #0f1e3d;           
     --card-bg: rgba(255, 255, 255, 0.95);
-    --mood-bg: rgba(255, 255, 255, 0.5); /* Semi-transparent white */
-    --modal-bg: #fdfbf7;            /* Parchment */
+    --mood-bg: rgba(255, 255, 255, 0.5); 
+    --modal-bg: #fdfbf7;            
     
     --card-border-top: #0f1e3d;
     --card-shadow: rgba(0,0,0,0.1);
     
-    --text-main: #2c1810;           /* Dark Brown */
-    --text-muted: #666;             /* Grey */
-    --text-header: #0f1e3d;         /* Deep Blue */
+    --text-main: #2c1810;           
+    --text-muted: #666;             
+    --text-header: #0f1e3d;         
     
-    --accent-primary: #D35400;      /* Saffron */
-    --accent-secondary: #FFD700;    /* Gold */
+    --accent-primary: #D35400;      
+    --accent-secondary: #FFD700;    
     
     --navbar-text: #FFD700;
     --modal-overlay: rgba(0,0,0,0.8);
     --footer-bg: #0f1e3d;
     --footer-text: #fdfbf7;
+
+    /* DYNAMIC VARIABLES FOR GYROSCOPE */
+    --move-x: 0px;
+    --move-y: 0px;
 }
 
 /* =========================================
-   2. COSMIC MODE (NIGHT THEME VARIABLES)
+   2. COSMIC MODE (UPDATED FOR GYROSCOPE)
    ========================================= */
 body.cosmic-mode {
-    /* --- NIGHT THEME VARIABLES --- */
-    --main-bg-color: transparent;   /* Transparent so stars show through */
+    --main-bg-color: transparent;   
     --main-bg-image: none;          
     
-    /* 1. Navbar: Deep Midnight */
     --navbar-bg: rgba(10, 15, 35, 0.95); 
-    --navbar-text: #00FFFF;         /* Neon Cyan */
+    --navbar-text: #00FFFF;         
 
-    /* 2. Chapter Cards: Deep Nebula Purple */
     --card-bg: rgba(30, 20, 50, 0.7); 
-    --card-border-top: #FF00FF;     /* Neon Magenta */
-    --card-shadow: rgba(255, 0, 255, 0.15); /* Purple Glow */
+    --card-border-top: #FF00FF;     
+    --card-shadow: rgba(255, 0, 255, 0.15); 
 
-    /* 3. Soul Doctor: Deep Healing Teal */
     --mood-bg: rgba(10, 40, 50, 0.7); 
-    --mood-border: #00FFFF;         /* Cyan Border */
+    --mood-border: #00FFFF;         
 
-    /* 4. Oracle Modal: Deep Void */
     --modal-bg: rgba(5, 5, 15, 0.98); 
     --modal-overlay: rgba(0,0,0,0.9);
 
-    /* Text & Accents */
-    --text-main: #E0E0E0;           /* Soft White */
-    --text-muted: #A0A0A0;          /* Light Grey */
-    --text-header: #E0FFFF;         /* Cyan-White */
+    --text-main: #E0E0E0;           
+    --text-muted: #A0A0A0;          
+    --text-header: #E0FFFF;         
     
-    --accent-primary: #FF00FF;      /* Neon Magenta */
-    --accent-secondary: #00FFFF;    /* Neon Cyan */
+    --accent-primary: #FF00FF;      
+    --accent-secondary: #00FFFF;    
     
-    --footer-bg: #020205;           /* Almost Black */
+    --footer-bg: #020205;           
     --footer-text: #8888AA;
+
+    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+    min-height: 100vh;
+    position: relative;
+    transition: background-position 0.1s linear;
+}
+
+body.cosmic-mode::before {
+    content: "";
+    position: fixed;
+    top: -50px; left: -50px; 
+    width: calc(100% + 100px); height: calc(100% + 100px);
+    
+    background-image: 
+        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
+        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
+        radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
+    background-size: 550px 550px, 350px 350px, 250px 250px;
+    
+    background-position: 
+        calc(0px + var(--move-x))       calc(0px + var(--move-y)), 
+        calc(40px + var(--move-x))      calc(60px + var(--move-y)), 
+        calc(130px + var(--move-x))     calc(270px + var(--move-y));
+    
+    z-index: 0; 
+    pointer-events: none;
+    animation: twinkle 4s ease-in-out infinite alternate;
+    will-change: background-position;
+}
+
+body.cosmic-mode::after {
+    content: "";
+    position: fixed;
+    top: -50px; left: -50px; 
+    width: calc(100% + 100px); height: calc(100% + 100px);
+    
+    background-image: 
+        radial-gradient(2px 2px at 20px 30px, #eee, transparent),
+        radial-gradient(2px 2px at 40px 70px, #fff, transparent),
+        radial-gradient(2px 2px at 50px 160px, #ddd, transparent),
+        radial-gradient(2px 2px at 90px 40px, #fff, transparent);
+    background-repeat: repeat;
+    background-size: 200px 200px;
+    
+    background-position: calc(var(--move-x) * 2) calc(var(--move-y) * 2);
+
+    z-index: 0;
+    opacity: 0.5;
+    animation: starDrift 100s linear infinite;
+    will-change: transform;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.1); }
+}
+
+@keyframes starDrift {
+    from { transform: translateY(0); }
+    to { transform: translateY(-500px); }
 }
 
 /* =========================================
@@ -193,7 +249,6 @@ body {
 /* =========================================
    5. CHAPTERS PAGE & DYNAMIC STARS
    ========================================= */
-
 .chapters-body {
     background-color: var(--main-bg-color); 
     background-image: var(--main-bg-image); 
@@ -205,68 +260,7 @@ body {
     min-height: 100vh;
     transition: background 0.5s ease;
     position: relative;
-    z-index: 1; /* Content sits above stars */
-}
-
-/* --- COSMIC MODE STAR SYSTEM --- */
-
-/* 1. The Deep Space Background Color (Applied to Body) */
-body.cosmic-mode {
-    background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
-    min-height: 100vh;
-    position: relative;
-}
-
-/* 2. Layer 1: Small Twinkling Stars */
-body.cosmic-mode::before {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    
-    /* Bright white stars */
-    background-image: 
-        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 3px),
-        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 2px),
-        radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 3px);
-        
-    background-size: 550px 550px, 350px 350px, 250px 250px;
-    background-position: 0 0, 40px 60px, 130px 270px;
-    
-    z-index: 0; /* Behind content */
-    pointer-events: none;
-    animation: twinkle 4s ease-in-out infinite alternate;
-}
-
-/* 3. Layer 2: Moving Star Dust */
-body.cosmic-mode::after {
-    content: "";
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    
-    /* Fainter, moving stars */
-    background-image: 
-        radial-gradient(2px 2px at 20px 30px, #eee, transparent),
-        radial-gradient(2px 2px at 40px 70px, #fff, transparent),
-        radial-gradient(2px 2px at 50px 160px, #ddd, transparent),
-        radial-gradient(2px 2px at 90px 40px, #fff, transparent);
-    
-    background-repeat: repeat;
-    background-size: 200px 200px;
-    
-    z-index: 0;
-    opacity: 0.5;
-    animation: starDrift 100s linear infinite;
-}
-
-/* --- ANIMATIONS --- */
-@keyframes twinkle {
-    0% { opacity: 0.5; transform: scale(1); }
-    100% { opacity: 1; transform: scale(1.1); }
-}
-
-@keyframes starDrift {
-    from { transform: translateY(0); }
-    to { transform: translateY(-500px); }
+    z-index: 1; 
 }
 
 /* =========================================
@@ -277,13 +271,14 @@ body.cosmic-mode::after {
     width: 100%;
     padding: 1rem 1.5rem;
     display: flex;
-    justify-content: space-between; /* Pushes Logo Left, Toggle Right */
+    justify-content: space-between; 
     align-items: center;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     box-sizing: border-box;
+    height: 70px;
 }
 
 .nav-logo {
@@ -337,7 +332,7 @@ body.cosmic-mode::after {
 .toggle-label:before {
     position: absolute;
     content: "";
-    height: 22px;       /* Circle Size */
+    height: 22px;       
     width: 22px;
     left: 4px;
     bottom: 4px;
@@ -347,16 +342,14 @@ body.cosmic-mode::after {
     z-index: 2;
 }
 
-/* Animation when checked (Night Mode) */
 input:checked + .toggle-label {
     background-color: #4b0082;
 }
 
 input:checked + .toggle-label:before {
-    transform: translateX(30px); /* Moves circle to the right */
+    transform: translateX(30px); 
 }
 
-/* Icons inside the toggle */
 .star-icon, .sun-icon {
     font-size: 14px;
     z-index: 1;
@@ -364,81 +357,36 @@ input:checked + .toggle-label:before {
 }
 
 /* =========================================
-   MOBILE ADJUSTMENTS
+   ORACLE BUTTON (Center Logic)
    ========================================= */
-@media (max-width: 768px) {
-    .navbar {
-        padding: 0.8rem 1rem;
-    }
-
-    .oracle-btn {
-        /* RESET POSITION FOR MOBILE flow */
-        position: static;
-        transform: none; 
-        margin: 0 auto;
-        
-        /* Mobile Sizing */
-        font-size: 0.75rem;
-        padding: 8px 12px;
-    }
-    .oracle-btn:hover {
-        transform: scale(1.05);
-    }
-
-    .oracle-btn:active {
-        transform: scale(0.95);
-    }
-
-    .nav-logo {
-        font-size: 1rem;
-    }
+.oracle-btn {
+    position: absolute;       
+    left: 50%;                
+    top: 50%;
+    transform: translate(-50%, -50%); 
     
-    .om-icon {
-        font-size: 1.5rem;
-    }
+    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.5);
+    padding: 10px 25px;
+    border-radius: 30px;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
+    animation: pulseOracle 3s infinite;
+    z-index: 101; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 
-    .toggle-wrapper {
-        transform: scale(0.8); 
-        transform-origin: right center;
-    }
-    .action-bar {
-        gap: 10px; /* Smaller gap between buttons */
-    }
-    
-    .action-btn {
-        font-size: 0.8rem;   /* Slightly smaller text */
-        padding: 8px 12px;   /* Slightly smaller padding */
-        flex: 1 1 auto;      /* Allows buttons to share space evenly */
-        min-width: 100px;    /* Prevents them from getting too tiny */
-    }
-    
-    .modal-body {
-        padding: 20px; /* Ensure content doesn't hit the screen edge */
-    }
-    
-    /* =========================================
-       FIX 2: MOBILE SEARCH BAR
-       ========================================= */
-    .search-section {
-        padding: 0 5px;
-    }
+.oracle-btn:hover {
+    transform: translate(-50%, -50%) scale(1.1); 
+    box-shadow: 0 0 25px rgba(37, 117, 252, 0.8);
+}
 
-    .search-wrapper {
-        /* Tight padding so button sits inside */
-        padding: 3px 3px 3px 15px; 
-    }
-
-    #searchInput {
-        font-size: 1rem;
-    }
-
-    .search-btn {
-        /* Reduce size so it fits inside the pill */
-        width: 38px;
-        height: 38px;
-        font-size: 1rem;
-        margin-left: 5px;
-    }
+.oracle-btn:active {
+    transform: translate(-50%, -50%) scale(0.95);
 }
 
 /* =========================================
@@ -454,7 +402,7 @@ input:checked + .toggle-label:before {
 }
 
 /* =========================================
-   DHARMA SEARCH BAR (FIXED FOR MOBILE)
+   DHARMA SEARCH BAR (Responsive)
    ========================================= */
 .search-section {
     margin-bottom: 2rem;
@@ -467,19 +415,16 @@ input:checked + .toggle-label:before {
 .search-wrapper {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Keeps items spaced properly */
+    justify-content: space-between; 
     background: var(--card-bg);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 50px; 
-    
-    /* FIX: Uniform padding to contain the button */
     padding: 4px 4px 4px 20px; 
-    
     box-shadow: 0 5px 15px var(--card-shadow);
     transition: all 0.3s ease;
     width: 100%;
-    max-width: 600px; /* Optimal reading width */
+    max-width: 600px;
     margin: 0 auto;
 }
 
@@ -490,15 +435,15 @@ input:checked + .toggle-label:before {
 }
 
 #searchInput {
-    flex: 1; /* Takes up all available space */
-    min-width: 0; /* CRITICAL FIX: Allows input to shrink so button fits */
+    flex: 1;
+    min-width: 0; 
     background: transparent;
     border: none;
     outline: none;
     font-family: 'Lora', serif;
     font-size: 1.1rem;
     color: var(--text-main);
-    padding: 10px 0; /* Remove side padding to avoid gaps */
+    padding: 10px 0;
 }
 
 #searchInput::placeholder {
@@ -506,7 +451,7 @@ input:checked + .toggle-label:before {
     opacity: 0.7;
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis; /* nice dots if text is too long */
+    text-overflow: ellipsis; 
 }
 
 .search-btn {
@@ -514,11 +459,8 @@ input:checked + .toggle-label:before {
     color: white;
     border: none;
     border-radius: 50%;
-    
-    /* Desktop Size */
     width: 42px;
     height: 42px;
-    
     font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -526,8 +468,6 @@ input:checked + .toggle-label:before {
     align-items: center;
     justify-content: center;
     box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    
-    /* FIX: Stop button from squishing */
     flex-shrink: 0; 
     margin-left: 8px; 
 }
@@ -683,39 +623,6 @@ input:checked + .toggle-label:before {
 }
 .verse-number { color: var(--accent-primary); font-weight: bold; display: block; margin-bottom: 8px; }
 
-/* Oracle Button (Desktop Styles) */
-.oracle-btn {
-    position: absolute;       
-    left: 50%;                
-    transform: translateX(-50%); 
-    
-    /* Styling */
-    background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.5);
-    padding: 10px 25px;
-    border-radius: 30px;
-    font-family: 'Cinzel', serif;
-    font-weight: bold;
-    cursor: pointer;
-    white-space: nowrap;
-    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
-    animation: pulseOracle 3s infinite;
-    z-index: 5;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 0 15px rgba(106, 17, 203, 0.5);
-    animation: pulseOracle 3s infinite;
-}
-
-.oracle-btn:hover {
-    transform: translateX(-50%) scale(1.1); 
-    box-shadow: 0 0 25px rgba(37, 117, 252, 0.8);
-}
-
-.oracle-btn:active {
-    transform: translateX(-50%) scale(0.95);
-}
-
 .sanskrit-text { color: var(--accent-primary); font-size: 1.3rem; font-weight: bold; text-align: center; margin-bottom: 5px; white-space: pre-line; }
 .transliteration-text { color: var(--text-muted); font-style: italic; text-align: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px dashed var(--accent-primary); }
 .translation-text { color: var(--text-main); font-size: 1.1rem; line-height: 1.6; text-align: left; }
@@ -780,7 +687,7 @@ input:checked + .toggle-label:before {
 }
 
 /* =========================================
-   ACTION BUTTONS (Audio & Copy & Download)
+   ACTION BUTTONS
    ========================================= */
 .action-bar {
     display: flex;
@@ -803,11 +710,9 @@ input:checked + .toggle-label:before {
     font-family: 'Cinzel', serif;
     display: inline-flex;
     align-items: center;
-    justify-content: center; /* Ensures text stays centered */
+    justify-content: center;
     gap: 8px; 
     transition: all 0.3s ease;
-    
-    /* FIX: Prevent buttons from sticking to edges */
     margin: 5px;
 }
 
@@ -822,12 +727,8 @@ input:checked + .toggle-label:before {
     transform: translateY(0);
 }
 
-.verse-item, .modal-text div {
-    cursor: default !important;
-}
-
 /* =========================================
-   INVISIBLE PRINTABLE CARD STYLES (UPDATED FOR IMAGE FIX)
+   INVISIBLE PRINTABLE CARD STYLES
    ========================================= */
 #printable-card-container {
     position: fixed;
@@ -836,22 +737,15 @@ input:checked + .toggle-label:before {
     width: 800px;
     height: 800px;
     z-index: -1;
-    
-    /* Flexbox centers the content */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     padding: 40px;
     box-sizing: border-box;
-
-    /* Fallback color if image fails */
     background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    
-    position: fixed; 
 }
 
-/* 1. THE BACKGROUND IMAGE STYLE */
 #print-bg-image {
     position: absolute; 
     top: 0;
@@ -862,12 +756,10 @@ input:checked + .toggle-label:before {
     z-index: 0;        
 }
 
-/* 2. THE CONTENT STYLE (Sits above image) */
 .printable-card-content {
     z-index: 1; 
     position: relative; 
-    
-    background: rgba(0, 0, 0, 0.6); /* Dark overlay */
+    background: rgba(0, 0, 0, 0.6); 
     padding: 40px;
     border-radius: 20px;
     border: 2px solid rgba(255, 215, 0, 0.5);
@@ -876,14 +768,11 @@ input:checked + .toggle-label:before {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    
-    /* Text Styles */
     font-family: 'Cinzel', serif;
     color: #ffffff;
     text-align: center;
 }
 
-/* Individual text elements */
 #print-chapter-info {
     font-size: 1.2rem;
     color: #ffd700;
@@ -926,4 +815,394 @@ input:checked + .toggle-label:before {
     margin-top: auto;
     padding-top: 20px;
     opacity: 0.8;
+}
+
+/* =========================================
+   🔮 MYSTIC CARD DECK STYLES
+   ========================================= */
+.card-overlay {
+    display: none; 
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(10, 15, 35, 0.95); 
+    z-index: 2000;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.card-overlay.show {
+    opacity: 1;
+}
+
+.card-arena {
+    text-align: center;
+    perspective: 1000px;
+    width: 100%;
+    padding: 20px;
+}
+
+.arena-title {
+    font-family: 'Cinzel', serif;
+    color: var(--accent-secondary);
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.arena-subtitle {
+    color: var(--text-muted);
+    margin-bottom: 40px;
+    font-style: italic;
+}
+
+.cards-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+/* THE CARD ITSELF */
+.mystic-card {
+    background-color: transparent;
+    width: 200px;
+    height: 300px;
+    perspective: 1000px;
+    cursor: pointer;
+}
+
+/* THE CONTAINER THAT FLIPS */
+.card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.8s;
+    transform-style: preserve-3d;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.mystic-card:hover .card-inner {
+    transform: translateY(-20px); 
+    box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
+}
+
+.mystic-card.flipped .card-inner {
+    transform: rotateY(180deg);
+}
+
+/* FRONT AND BACK STYLES */
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--accent-secondary);
+}
+
+/* FRONT: The Design */
+.card-front {
+    background: linear-gradient(135deg, #1a0b2e, #4b0082);
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjNDgwMDgyIi8+CjxwYXRoIGQ9Ik0wIDBMNCA0Wk00IDBMMCA0WiIgc3Ryb2tlPSJyZ2JhKDI1NSwyMTUsMCwwLjEpIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+'); /* Subtle pattern */
+}
+
+.om-symbol {
+    font-size: 4rem;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px gold);
+    animation: float 3s infinite ease-in-out;
+}
+
+/* BACK: The Reveal */
+.card-back {
+    background: #fdfbf7;
+    color: var(--text-main);
+    transform: rotateY(180deg);
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.close-deck-btn {
+    margin-top: 50px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 10px 30px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.close-deck-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: white;
+}
+
+/* =========================================
+   🎵 MANTRA VISUALIZER STYLES
+   ========================================= */
+.mantra-visualizer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    height: 30px;
+    margin-top: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none; /* Let clicks pass through */
+}
+
+.mantra-visualizer.active {
+    opacity: 1;
+}
+
+.bar {
+    width: 6px;
+    background: var(--accent-secondary);
+    border-radius: 3px;
+    height: 5px;
+    animation: soundWave 0s infinite ease-in-out; /* Paused by default */
+}
+
+.mantra-visualizer.active .bar {
+    animation-duration: 1s;
+}
+
+.mantra-visualizer .bar:nth-child(1) { animation-delay: 0.0s; }
+.mantra-visualizer .bar:nth-child(2) { animation-delay: 0.1s; }
+.mantra-visualizer .bar:nth-child(3) { animation-delay: 0.2s; }
+.mantra-visualizer .bar:nth-child(4) { animation-delay: 0.3s; }
+.mantra-visualizer .bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes soundWave {
+    0%, 100% { height: 5px; }
+    50% { height: 25px; }
+}
+
+/* =========================================
+   🤖 CHATBOT STYLES (NEW)
+   ========================================= */
+.chatbot-fab {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1a0b2e, #4b0082);
+    border: 2px solid var(--accent-secondary);
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+    z-index: 5000;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulseGold 3s infinite;
+}
+
+.chatbot-fab:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.chatbot-container {
+    position: fixed;
+    bottom: 100px;
+    right: 30px;
+    width: 350px;
+    height: 500px;
+    background: var(--card-bg);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    z-index: 5000;
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    overflow: hidden;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    animation: slideUpFade 0.4s ease;
+}
+
+.chat-header {
+    background: var(--navbar-bg);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--accent-secondary);
+    font-family: 'Cinzel', serif;
+    border-bottom: 2px solid var(--accent-primary);
+}
+
+.chat-close {
+    cursor: pointer;
+    font-size: 24px;
+    transition: 0.3s;
+}
+.chat-close:hover { color: white; }
+
+.chat-body {
+    flex: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(0,0,0,0.02);
+}
+
+/* Chat Messages */
+.chat-message {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 15px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    animation: fadeInUp 0.3s ease;
+}
+
+.bot-message {
+    align-self: flex-start;
+    background: linear-gradient(135deg, #fff, #f0f0f0);
+    color: #333;
+    border-left: 3px solid var(--accent-secondary);
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    border-top-left-radius: 2px;
+}
+
+.user-message {
+    align-self: flex-end;
+    background: var(--accent-primary);
+    color: white;
+    border-bottom-right-radius: 2px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+}
+
+/* Chat Input */
+.chat-input-area {
+    padding: 15px;
+    background: var(--card-bg);
+    border-top: 1px solid rgba(0,0,0,0.1);
+    display: flex;
+    gap: 10px;
+}
+
+#chatInput {
+    flex: 1;
+    padding: 10px 15px;
+    border-radius: 25px;
+    border: 1px solid #ccc;
+    outline: none;
+    font-family: 'Lora', serif;
+}
+
+.chat-input-area button {
+    background: var(--accent-primary);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.chat-input-area button:hover {
+    background: var(--accent-secondary);
+    color: #000;
+}
+
+/* =========================================
+   MOBILE ADJUSTMENTS (Updated)
+   ========================================= */
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0.8rem 1rem;
+    }
+
+    /* FIX 1: BUTTON CENTERED IN NAVBAR */
+    .oracle-btn {
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 0.75rem;
+        padding: 8px 12px;
+        white-space: nowrap;
+    }
+    
+    .nav-logo {
+        font-size: 1rem;
+    }
+    
+    .toggle-wrapper {
+        transform: scale(0.8); 
+        transform-origin: right center;
+    }
+
+    /* FIX 2: MOBILE SEARCH BAR */
+    .search-section {
+        padding: 0 5px;
+    }
+    .search-wrapper {
+        padding: 3px 3px 3px 15px; 
+    }
+    #searchInput {
+        font-size: 1rem;
+    }
+    .search-btn {
+        width: 38px;
+        height: 38px;
+        font-size: 1rem;
+        margin-left: 5px;
+    }
+
+    /* FIX 3: MOBILE CARDS LAYOUT */
+    .card-overlay {
+        align-items: flex-start; /* Allows scrolling from top */
+        padding-top: 20px;
+        overflow-y: auto; /* Enable vertical scroll */
+    }
+    .card-arena {
+        height: auto; /* Let it grow */
+        padding-bottom: 80px; /* Space for close button */
+    }
+    .mystic-card {
+        width: 130px; /* Smaller width */
+        height: 190px; /* Smaller height */
+    }
+    .cards-container {
+        gap: 15px;
+    }
+    .close-deck-btn {
+        margin-top: 30px;
+        margin-bottom: 50px;
+    }
+
+    /* FIX 4: MOBILE CHATBOT */
+    .chatbot-container {
+        width: 100%;
+        height: 80vh; /* Takes most of the screen */
+        bottom: 0;
+        right: 0;
+        border-radius: 20px 20px 0 0; /* Only top corners rounded */
+    }
+    .chatbot-fab {
+        bottom: 20px;
+        right: 20px;
+    }
 }
