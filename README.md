@@ -2,23 +2,20 @@
 
 > "The Divine Song of God" — A spiritual companion web application that brings the wisdom of the Bhagavad Gita to the modern digital age.
 
-**Divine Dialogue** is an interactive spiritual experience featuring a 3D "Glassmorphism" UI, mood-based guidance ("The Soul Doctor"), and a fully immersive "Cosmic Mode" with dynamic, twinkling stars.
-
 ---
 
 ## ✨ Key Features
 
-* **📖 Complete Wisdom:** Access all 18 Chapters and 700 Verses with Sanskrit text, Transliteration, and English translations.
-* **🔊 Voice of Wisdom:** Listen to the **Sanskrit Shlokas** chanted with authentic pronunciation (using advanced Text-to-Speech integration).
-* **📸 Insta-Wisdom:** Generate and **Download beautiful shareable cards** of any verse with a divine background, perfect for WhatsApp Status or Instagram.
-* **🤖 Krishna's Counsel:** A real-time AI companion powered by Google Gemini that answers life's problems with the wisdom of the Gita.
-* **✨ Divine Whisper:** A mystical 3D card deck experience that reveals a random, destined verse from the Gita for instant spiritual guidance.
-* **🎵 Mantra Visualizer:** Dynamic audio bars that react visually when verses are chanted aloud.
-* **🩺 The Soul Doctor:** An interactive "Mood Tracker" that prescribes verses based on your emotions (Anxious, Angry, Confused, etc.).
-* **🔍 Dharma Search Engine:** Instantly find specific verses by searching in English (meaning), Phonetic Transliteration (e.g., 'Karmanye'), or Original Sanskrit (Devanagari).
-* **🌌 Cosmic Mode:** A dynamic toggle that transforms the site into a Deep Space theme with twinkling stars.
-* **🌌 Cosmic Gyroscope:** An immersive, motion-responsive background that moves with your device or mouse.
-* **📱 Fully Responsive:** Optimized for Mobile, Tablet, and Laptops.
+* **🐚 The "Vishwaroopam" Entrance:** A cinematic landing experience featuring a 3D Cosmic Warp. Holding the Shankh triggers a hyper-speed starfield transition, violent camera shake, and a seamless orchestral audio blast that transports users into the divine realm.
+* **🔊 "Vani" Divine Audio Engine:** A custom-built Web Audio API engine that transforms standard text-to-speech into a Divine Temple Voice. It applies real-time Pitch Correction (0.85x) and Convolution Reverb (Echo) to simulate the acoustics of a vast, ancient sanctuary.
+* **📖 Complete Wisdom:** Access all 18 Chapters and 700 Verses with the original Sanskrit text, phonetic Transliteration, and clear English translations.
+* **🎵 Synchronized Mantra Visualizer:** A dynamic, golden wave animation in the reading modal that reacts in real-time, vibrating only when the divine verse is being chanted.
+* **📸 Insta-Wisdom:** Generate and Download high-quality verse cards instantly. The app renders the Sanskrit and English text onto a divine background, ready for WhatsApp Status or Instagram Stories.
+* **🤖 Krishna's Counsel (Gemini AI):** A contextual, resizable AI chatbot companion. It adopts the persona of Lord Krishna to answer your life's specific problems with compassion and wisdom derived directly from the Gita.
+* **🩺 The Soul Doctor:** An interactive "Mood Tracker" that prescribes specific verses as medicine for your emotions (e.g., For Anxiety → Chapter 2, Verse 47).
+* **🔍 Dharma Search Engine:** A powerful search tool that finds verses instantly using keywords in English, Transliteration (e.g., 'Karmanye'), or Original Sanskrit (Devanagari).
+* **🌌 Cosmic Gyroscope:** An immersive background system that reacts to Mouse Movement (Desktop) and Device Tilt/Gyroscope (Mobile), creating a parallax 3D depth effect.
+* **📱 Zero-Overlap Design:** A fully responsive, Flexbox-based architecture ensuring the UI elements (Footer, Cards, Modals) never overlap, providing a flawless experience on Mobile, Tablet, and Desktop.
 
 ---
 
