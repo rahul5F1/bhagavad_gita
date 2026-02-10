@@ -6,70 +6,279 @@
     <title>Srimad Bhagavad Gita</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital@0;1&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="landing-body">
     
-    <div class="overlay">
-        <div class="landing-content" id="tiltBox">
-            <h1 class="main-title">Srimad Bhagavad Gita</h1>
-            <p class="subtitle">The Divine Song of God</p>
-            <div class="divider">🕉</div>
-            <a href="/chapters" class="enter-btn">Enter the Divine Dialogue</a>
-        </div>
+    <canvas id="fogCanvas"></canvas>
+    <div id="fogInstruction">🌫️ Rub the screen to reveal the Divine path 🌫️</div>
+
+    <div id="warpContainer"></div> 
+
+    <div class="overlay" id="landingOverlay">
+        
+        <main class="content-area">
+            <div class="landing-content" id="tiltBox">
+                <h1 class="main-title">Srimad Bhagavad Gita</h1>
+                <p class="subtitle">The Divine Song of God</p>
+                <div class="divider">🕉</div>
+                
+                <div class="shankh-container">
+                    <svg class="progress-ring" width="120" height="120">
+                       <circle class="progress-ring__circle" stroke="gold" stroke-width="4" fill="transparent" r="52" cx="60" cy="60"/>
+                    </svg>
+                    
+                    <button id="shankhBtn" class="shankh-btn" oncontextmenu="return false;">🐚</button>
+                </div>
+                <p class="shankh-instruction">Hold the Shankh to Enter</p>
+            </div>
+        </main>
+
+        <footer class="site-footer landing-footer">
+            <div class="footer-content">
+                <div class="footer-logo">🕉 Gita Wisdom</div>
+                <p class="footer-text">
+                    &copy; 2026 Divine Dialogue Project. All Rights Reserved.
+                </p>
+                <p class="footer-text">
+                    Designed with <span class="footer-heart">❤</span> & Devotion by <strong><a href="https://www.linkedin.com/in/ramavath-rahul-12542926a/" target="_blank" style="color: #fdfbf7; text-decoration: underline;">Ramavath Rahul</a></strong>
+                </p>
+            </div>
+        </footer>
     </div>
 
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-logo">🕉 Gita Wisdom</div>
-            <p class="footer-text">
-                &copy; 2026 Divine Dialogue Project. All Rights Reserved.
-            </p>
-            <p class="footer-text">
-                Designed with <span class="footer-heart">❤</span> & Devotion by <strong><a href="https://www.linkedin.com/in/ramavath-rahul-12542926a/" target="_blank" style="color: #fdfbf7;">Ramavath Rahul</a></strong>
-            </p>
-        </div>
-    </footer>
+    <canvas id="sparkleCanvas"></canvas>
 
-    <div id="printable-card-container">
-    
-        <img id="print-bg-image" src="{{ url_for('static', filename='images/quote-bg.jpg') }}" alt="Background" crossorigin="anonymous">
-
-        <div class="printable-card-content">
-            <div id="print-chapter-info"></div>
-            <div id="print-verse-num"></div>
-            <div id="print-sanskrit"></div>
-            <div id="print-transliteration"></div>
-            <div id="print-translation"></div>
-            <div class="print-footer">🕉 Gita Wisdom</div>
-        </div>
-    </div>
-
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <audio id="audioShankh" src="{{ url_for('static', filename='audios/shankh_rise.mp3') }}" preload="auto"></audio>
+    <audio id="audioBlast" src="{{ url_for('static', filename='audios/divine_blast.mp3') }}" preload="auto"></audio>
 
     <script>
-        const card = document.getElementById('tiltBox');
+        /* =========================================
+           AUDIO UNLOCKER & ECHO SYSTEM
+           ========================================= */
+        let audioUnlocked = false;
+        const audioShankh = document.getElementById('audioShankh');
+        const audioBlast = document.getElementById('audioBlast');
         
-        document.addEventListener('mousemove', (e) => {
-            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
-            
-            // Apply the rotation
-            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-        });
+        // Create an Echo Clone
+        const echoShankh = new Audio(audioShankh.src);
+        echoShankh.volume = 0.4; // 40% volume for echo
 
-        // Reset when mouse leaves window (Optional polish)
-        document.addEventListener('mouseleave', () => {
-            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-            card.style.transition = "all 0.5s ease";
-        });
+        function unlockAudio() {
+            if (audioUnlocked) return;
+            // Warm up main and echo
+            audioShankh.play().then(() => audioShankh.pause()).catch(() => {});
+            echoShankh.play().then(() => echoShankh.pause()).catch(() => {});
+            audioBlast.play().then(() => audioBlast.pause()).catch(() => {});
+            
+            audioUnlocked = true;
+            window.removeEventListener('touchstart', unlockAudio);
+            window.removeEventListener('click', unlockAudio);
+        }
+        window.addEventListener('touchstart', unlockAudio, { passive: true });
+        window.addEventListener('click', unlockAudio);
+
+        // --- CUSTOM PLAY FUNCTION ---
+        function playShankhWithEcho() {
+            // Main Sound
+            audioShankh.currentTime = 0;
+            audioShankh.volume = 1.0;
+            audioShankh.play().catch(e => {});
+
+            // Echo Sound (Delayed by 250ms)
+            setTimeout(() => {
+                if(!audioShankh.paused) { // Only play if main is still playing
+                    echoShankh.currentTime = 0;
+                    echoShankh.play().catch(e => {});
+                }
+            }, 250);
+        }
+
+        function stopShankhWithEcho() {
+            audioShankh.pause();
+            audioShankh.currentTime = 0;
+            echoShankh.pause();
+            echoShankh.currentTime = 0;
+        }
+
+
+        /* =========================================
+           1. FOG ERASER LOGIC
+           ========================================= */
+        const canvas = document.getElementById('fogCanvas');
+        const ctx = canvas.getContext('2d');
+        const instruction = document.getElementById('fogInstruction');
+        const overlay = document.getElementById('landingOverlay');
+        let width, height, isFogCleared = false, eraseCount = 0;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            if(!isFogCleared) fillFog();
+        }
+        function fillFog() {
+            ctx.fillStyle = "rgba(200, 210, 220, 0.95)"; 
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalCompositeOperation = 'destination-out';
+        }
+        function erase(x, y) {
+            if (isFogCleared) return;
+            ctx.beginPath(); ctx.arc(x, y, 60, 0, Math.PI * 2); ctx.fill();
+            eraseCount++;
+            if (eraseCount > 35) clearFogCompletely();
+        }
+        function clearFogCompletely() {
+            if(isFogCleared) return;
+            isFogCleared = true;
+            canvas.style.transition = "opacity 1.5s ease"; canvas.style.opacity = "0";
+            instruction.style.transition = "opacity 1s ease"; instruction.style.opacity = "0";
+            overlay.style.opacity = "1"; overlay.style.pointerEvents = "auto"; 
+            setTimeout(() => { canvas.style.display = 'none'; instruction.style.display = 'none'; }, 1500);
+            
+            // Init Stars
+            createWarpStars();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('mousemove', (e) => erase(e.clientX, e.clientY));
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); erase(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+        resizeCanvas();
+
+
+        /* =========================================
+           2. VISHWAROOPAM (COSMIC WARP) LOGIC
+           ========================================= */
+        const shankhBtn = document.getElementById('shankhBtn');
+        const circle = document.querySelector('.progress-ring__circle');
+        const warpContainer = document.getElementById('warpContainer');
         
-        // Remove transition during movement for smoothness
-        document.addEventListener('mouseenter', () => {
-            card.style.transition = "none";
-        });
+        const radius = circle.r.baseVal.value;
+        const circumference = radius * 2 * Math.PI;
+        circle.style.strokeDasharray = `${circumference} ${circumference}`;
+        circle.style.strokeDashoffset = circumference;
+
+        let holdStartTime;
+        let isHolding = false;
+        let isTransitioning = false; 
+        const holdDuration = 3000; 
+
+        // Create 400 stars for high density
+        function createWarpStars() {
+            for (let i = 0; i < 400; i++) {
+                const star = document.createElement('div');
+                star.className = 'warp-star';
+                
+                const x = (Math.random() - 0.5) * window.innerWidth * 2;
+                const y = (Math.random() - 0.5) * window.innerHeight * 2;
+                
+                star.style.setProperty('--startX', `${x}px`);
+                star.style.setProperty('--startY', `${y}px`);
+                
+                // Varied animation durations for "streaming" effect
+                star.style.animationDuration = `${Math.random() * 0.5 + 0.2}s`; // 0.2s to 0.7s (VERY FAST)
+                star.style.animationDelay = `${Math.random() * 2}s`;
+                
+                warpContainer.appendChild(star);
+            }
+        }
+
+        function startHold(e) {
+            if (isTransitioning) return;
+            if (e.type === 'touchstart') e.preventDefault(); 
+            if (isHolding) return;
+            
+            isHolding = true;
+            holdStartTime = Date.now();
+
+            // 🔥 ACTIVATE WARP
+            document.body.classList.add('warping');
+            shankhBtn.classList.add('holding');
+            
+            // PLAY WITH ECHO
+            playShankhWithEcho();
+
+            requestAnimationFrame(updateProgress);
+        }
+
+        function updateProgress() {
+            if (!isHolding || isTransitioning) return;
+            
+            const elapsed = Date.now() - holdStartTime;
+            const progress = Math.min(elapsed / holdDuration, 1);
+            const offset = circumference - (progress * circumference);
+            circle.style.strokeDashoffset = offset;
+
+            if (elapsed >= holdDuration) {
+                triggerDivineEntry();
+            } else {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+
+        function endHold() {
+            if (isTransitioning) return;
+            if (!isHolding) return;
+            isHolding = false;
+            
+            // ❄️ STOP WARP
+            document.body.classList.remove('warping');
+            shankhBtn.classList.remove('holding');
+            circle.style.strokeDashoffset = circumference;
+            
+            // STOP AUDIO
+            stopShankhWithEcho();
+        }
+
+        ['mousedown', 'touchstart'].forEach(evt => shankhBtn.addEventListener(evt, startHold));
+        ['mouseup', 'mouseleave', 'touchend'].forEach(evt => shankhBtn.addEventListener(evt, endHold));
+
+
+        /* =========================================
+           3. DIVINE ENTRY
+           ========================================= */
+        function triggerDivineEntry() {
+            isTransitioning = true;
+            isHolding = false;
+            
+            // Audio Blast (Keep Shankh Echo playing)
+            audioBlast.currentTime = 0;
+            audioBlast.volume = 1.0;
+            audioBlast.play().catch(e => {});
+
+            document.body.classList.add('divine-flash'); 
+            createSparkles(); 
+
+            setTimeout(() => {
+                window.location.href = "/chapters";
+            }, 1500);
+        }
+
+        /* =========================================
+           4. SPARKLES
+           ========================================= */
+        function createSparkles() {
+            const sCanvas = document.getElementById('sparkleCanvas');
+            const sCtx = sCanvas.getContext('2d');
+            sCanvas.width = window.innerWidth;
+            sCanvas.height = window.innerHeight;
+            let particles = [];
+            for(let i=0; i<150; i++) {
+                particles.push({
+                    x: window.innerWidth/2, y: window.innerHeight/2,
+                    vx: (Math.random() - 0.5) * 35, vy: (Math.random() - 0.5) * 35,
+                    life: 1, color: `hsl(${Math.random()*50 + 30}, 100%, 70%)`
+                });
+            }
+            function animate() {
+                sCtx.clearRect(0, 0, sCanvas.width, sCanvas.height);
+                particles.forEach((p, i) => {
+                    p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+                    sCtx.globalAlpha = p.life; sCtx.fillStyle = p.color;
+                    sCtx.beginPath(); sCtx.arc(p.x, p.y, Math.random()*4, 0, Math.PI*2); sCtx.fill();
+                    if(p.life <= 0) particles.splice(i, 1);
+                });
+                if(particles.length > 0) requestAnimationFrame(animate);
+            }
+            animate();
+        }
     </script>
-    
 </body>
 </html>
