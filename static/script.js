@@ -130,8 +130,6 @@ function openChapter(chapterNum) {
 
 // 3. Close Modal
 function closeChapter() {
-    window.speechSynthesis.cancel(); 
-    
     // Stop visualizer when closing
     const visualizer = document.getElementById('globalVisualizer');
     if(visualizer) visualizer.classList.remove('active');
@@ -150,19 +148,17 @@ window.onclick = function(event) {
 }
 
 /* =========================================
-   🔮 MYSTIC CARD LOGIC (UPDATED ASK ORACLE)
+   🔮 MYSTIC CARD LOGIC
    ========================================= */
 
-// 1. Open the Card Deck (Replaces the old direct API call)
+// 1. Open the Card Deck
 function askOracle() {
     const overlay = document.getElementById('cardDeckOverlay');
     overlay.style.display = 'flex';
-    // Small timeout to allow the display:flex to apply before opacity transition
     setTimeout(() => {
         overlay.classList.add('show');
     }, 10);
     
-    // Reset cards if they were flipped before
     document.querySelectorAll('.mystic-card').forEach(card => {
         card.classList.remove('flipped');
     });
@@ -177,16 +173,15 @@ function closeCardDeck() {
     }, 500);
 }
 
-// 3. Reveal a Card (The Magic Moment)
+// 3. Reveal a Card
 function revealCard(cardElement) {
     if (cardElement.classList.contains('flipped')) return;
 
     cardElement.classList.add('flipped');
 
-    // Wait 1 second (for the flip animation), then fetch the verse
     setTimeout(() => {
         fetchOracleVerse();
-        closeCardDeck(); // Close the deck to show the modal result
+        closeCardDeck();
     }, 1000);
 }
 
@@ -347,42 +342,96 @@ function showToast(message) {
 }
 
 /* =========================================
-   🔊 VOICE OF WISDOM (UPDATED WITH VISUALIZER)
+   🗣️ VANI (DIVINE AUDIO ENGINE) - FIXED
    ========================================= */
+let audioContext;
+let currentSource;
+
 function playAudio(text) {
-    window.speechSynthesis.cancel();
     const visualizer = document.getElementById('globalVisualizer');
     
-    // Stop previous visualizer if running
-    if(visualizer) visualizer.classList.remove('active');
+    // --- 🛠️ AUDIO CLEANING FIX ---
+    // 1. Remove text between double bars (||...||) e.g., ||16-21||
+    // 2. Remove any remaining single bars
+    // 3. Remove digits
+    let cleanText = text.replace(/\|\|.*?\|\|/g, "") 
+                        .replace(/\|/g, " ")
+                        .replace(/[0-9]/g, "")
+                        .trim();
 
-    let cleanText = text.replace(/\|\|.*?\|\|/g, "").replace(/[0-9.-]/g, "").trim();
-    let utterance = new SpeechSynthesisUtterance(cleanText);
-    const voices = window.speechSynthesis.getVoices();
-    const hindiVoice = voices.find(v => v.lang.includes('hi'));
-    if (hindiVoice) { utterance.voice = hindiVoice; utterance.lang = 'hi-IN'; } 
-    else { utterance.lang = 'hi-IN'; }
-    utterance.rate = 0.85; 
-    utterance.pitch = 1.0; 
+    if(visualizer) visualizer.classList.add('active');
     
-    // 🎵 VISUALIZER EVENTS
-    utterance.onstart = function() {
-        if(visualizer) visualizer.classList.add('active');
-    };
-    
-    utterance.onend = function() {
-        if(visualizer) visualizer.classList.remove('active');
-    };
+    fetch('/api/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: cleanText })
+    })
+    .then(response => response.json())
+    .then(async data => {
+        if (data.error) {
+            console.error("TTS Error:", data.error);
+            showToast("Krishna's voice is faint...");
+            if(visualizer) visualizer.classList.remove('active');
+            return;
+        }
 
-    utterance.onerror = function() {
-        if(visualizer) visualizer.classList.remove('active');
-    };
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
 
-    window.speechSynthesis.speak(utterance);
+        if (currentSource) { try { currentSource.stop(); } catch(e){} }
+
+        const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
+        const audioBuffer = await audioContext.decodeAudioData(audioBytes.buffer);
+
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+
+        // PITCH DROP
+        source.playbackRate.value = 0.85; 
+
+        const convolver = audioContext.createConvolver();
+        const rate = audioContext.sampleRate;
+        const length = rate * 1.5; 
+        const impulse = audioContext.createBuffer(2, length, rate);
+        const impulseL = impulse.getChannelData(0);
+        const impulseR = impulse.getChannelData(1);
+
+        for (let i = 0; i < length; i++) {
+            const decay = Math.pow(1 - i / length, 2); 
+            impulseL[i] = (Math.random() * 2 - 1) * decay;
+            impulseR[i] = (Math.random() * 2 - 1) * decay;
+        }
+        convolver.buffer = impulse;
+
+        const dryNode = audioContext.createGain();
+        const wetNode = audioContext.createGain();
+        
+        dryNode.gain.value = 0.8; 
+        wetNode.gain.value = 0.3; 
+
+        source.connect(dryNode);
+        source.connect(convolver);
+        convolver.connect(wetNode);
+        
+        dryNode.connect(audioContext.destination);
+        wetNode.connect(audioContext.destination);
+
+        source.start(0);
+        currentSource = source;
+
+        source.onended = () => {
+            if(visualizer) visualizer.classList.remove('active');
+        };
+    })
+    .catch(err => {
+        console.error("Audio Engine Error:", err);
+        if(visualizer) visualizer.classList.remove('active');
+    });
 }
 
 /* =========================================
-   📸 DOWNLOAD IMAGE FEATURE (Robut Fix)
+   📸 DOWNLOAD IMAGE FEATURE
    ========================================= */
 function triggerDownload(btn) {
     const chapNum = btn.getAttribute('data-chapter');
@@ -446,7 +495,7 @@ function performSearch() {
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
 
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Searching the Scriptures...</div>';
+    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Searching...</div>';
     modalTitle.innerText = `Search Results`;
     modalSubtitle.innerText = `Matches for "${query}"`;
 
@@ -457,10 +506,9 @@ function performSearch() {
                 modalText.innerHTML = `
                     <div style="text-align:center; padding: 30px;">
                         <p>No verses found containing "${query}".</p>
-                        <p style="font-size: 0.9rem; color: var(--text-muted);">Try searching for words like "Soul", "Duty", "Yoga", or "Time".</p>
                     </div>`;
             } else {
-                let versesHtml = `<p style="text-align:center; margin-bottom: 20px; color: var(--accent-primary);">${data.length} verses found</p>`;
+                let versesHtml = `<p style="text-align:center; margin-bottom: 20px;">${data.length} verses found</p>`;
                 
                 data.forEach(v => {
                     const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
@@ -477,53 +525,91 @@ function performSearch() {
                             <p class="translation-text">${v.text}</p>
                             
                             <div class="action-bar">
-                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                                    🔊 Listen
-                                </button>
-                                
-                                <button class="action-btn" onclick="copyVerse('${v.chapter_number}.${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                                    📋 Copy
-                                </button>
-                                
+                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">🔊 Listen</button>
+                                <button class="action-btn" onclick="copyVerse('${v.chapter_number}.${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">📋 Copy</button>
                                 <button class="action-btn" onclick="triggerDownload(this)"
                                     data-chapter="${v.chapter_number}"
                                     data-title="${safeTitle}"
                                     data-verse="${v.verse}"
                                     data-sanskrit="${safeSanskrit}"
                                     data-transliteration="${safeTransliteration}"
-                                    data-translation="${safeText}">
-                                    📸 Download
-                                </button>
+                                    data-translation="${safeText}">📸 Download</button>
                             </div>
                         </div>
                     `;
                 });
                 modalText.innerHTML = versesHtml;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>Search failed. Please try again.</p>";
         });
 }
 
 /* =========================================
-   🤖 KRISHNA CHATBOT LOGIC
+   🤖 KRISHNA CHATBOT LOGIC (TEXT ONLY + RESIZABLE)
    ========================================= */
-function toggleChat() {
-    const chat = document.getElementById("chatbotContainer");
-    if (chat.style.display === "flex") {
-        chat.style.display = "none";
-    } else {
-        chat.style.display = "flex";
-        document.getElementById("chatInput").focus();
-    }
+const chatContainer = document.getElementById("chatbotContainer");
+const resizer = document.getElementById("chatResizer");
+
+function openChat() {
+    chatContainer.style.display = "flex";
+    setTimeout(() => {
+        chatContainer.classList.add("active");
+    }, 10);
+    document.getElementById("chatInput").focus();
+}
+
+function closeChat() {
+    chatContainer.classList.remove("active");
+    setTimeout(() => {
+        chatContainer.style.display = "none";
+    }, 400); 
+}
+
+// RESIZING LOGIC
+let isResizing = false;
+let startY, startHeight;
+
+resizer.addEventListener('mousedown', initResize);
+document.addEventListener('mousemove', resize);
+document.addEventListener('mouseup', stopResize);
+
+resizer.addEventListener('touchstart', initResize, { passive: false });
+document.addEventListener('touchmove', resize, { passive: false });
+document.addEventListener('touchend', stopResize);
+
+function initResize(e) {
+    isResizing = true;
+    startY = e.clientY || e.touches[0].clientY;
+    startHeight = parseInt(document.defaultView.getComputedStyle(chatContainer).height, 10);
+    document.body.style.userSelect = 'none';
+    if(e.type === 'touchstart') e.preventDefault();
+}
+
+function resize(e) {
+    if (!isResizing) return;
+    if(e.type === 'touchmove') e.preventDefault();
+    
+    const clientY = e.clientY || e.touches[0].clientY;
+    const deltaY = startY - clientY;
+    let newHeight = startHeight + deltaY;
+
+    const windowHeight = window.innerHeight;
+    const navbarHeight = 80; 
+    const minHeight = 200;   
+    const maxHeight = windowHeight - navbarHeight;
+
+    if (newHeight > maxHeight) newHeight = maxHeight;
+    if (newHeight < minHeight) newHeight = minHeight;
+
+    chatContainer.style.height = `${newHeight}px`;
+}
+
+function stopResize() {
+    isResizing = false;
+    document.body.style.userSelect = 'auto';
 }
 
 function handleChatEnter(event) {
-    if (event.key === "Enter") {
-        sendMessage();
-    }
+    if (event.key === "Enter") sendMessage();
 }
 
 function sendMessage() {
@@ -531,15 +617,12 @@ function sendMessage() {
     const message = input.value.trim();
     if (!message) return;
 
-    // 1. Add User Message
     addChatMessage(message, "user-message");
     input.value = "";
 
-    // 2. Add Typing Indicator
     const typingId = "typing-" + Date.now();
-    addChatMessage("Krishna is contemplating...", "bot-message", typingId);
+    addChatMessage('<span class="typing-dots">Krishna is contemplating</span>', "bot-message", typingId, true);
 
-    // 3. Fetch Response
     fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -547,13 +630,10 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
-        // Remove typing indicator
         const typingEl = document.getElementById(typingId);
         if (typingEl) typingEl.remove();
 
-        // 4. Show Krishna's Response (Updated for AI)
         if (data.reply) {
-            // Convert newlines to <br> for better reading
             const formattedReply = data.reply.replace(/\n/g, "<br>");
             addChatMessage(formattedReply, "bot-message", null, true);
         } else {
@@ -561,7 +641,6 @@ function sendMessage() {
         }
     })
     .catch(err => {
-        console.error(err);
         const typingEl = document.getElementById(typingId);
         if (typingEl) typingEl.remove();
         addChatMessage("The connection is faint. Try again.", "bot-message");
@@ -581,5 +660,5 @@ function addChatMessage(text, className, id = null, isHTML = false) {
     }
     
     chatBody.appendChild(div);
-    chatBody.scrollTop = chatBody.scrollHeight; // Auto scroll
+    chatBody.scrollTop = chatBody.scrollHeight;
 }
