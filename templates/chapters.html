@@ -6,7 +6,6 @@
     <title>Chapters | Bhagavad Gita</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="chapters-body">
@@ -21,8 +20,8 @@
         </a>
     
         <div class="nav-controls">
-            <button onclick="askOracle()" class="oracle-btn">
-                ✨ Divine Whisper
+            <button onclick="openChat()" class="oracle-btn">
+                ✨ Ask Krishna
             </button>
 
             <div class="toggle-wrapper" title="Switch to Cosmic View">
@@ -63,12 +62,10 @@
         <div class="chapters-grid">
             {% for chapter in chapters %}
             <div class="chapter-card" onclick="openChapter('{{ chapter.chapter_number }}')">
-    
                 <div class="card-header-row">
                     <span class="card-number">Chapter {{ chapter.chapter_number }}</span>
                     <span class="verse-count-badge">{{ chapter.verse_count }} Verses</span>
                 </div>
-
                 <h3>{{ chapter.title }}</h3>
                 <p class="card-translation">{{ chapter.translation }}</p>
                 <div class="card-decoration"></div>
@@ -80,20 +77,13 @@
     <div id="readingModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeChapter()">&times;</span>
-            
             <div class="modal-header">
                 <h2 id="modalTitle">Chapter Title</h2>
                 <h4 id="modalSubtitle">Translation</h4>
-                
                 <div id="globalVisualizer" class="mantra-visualizer">
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
-                    <div class="bar"></div>
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
                 </div>
             </div>
-
             <div class="modal-body" id="modalText">
                 <div class="loading-spinner">Loading Divine Text...</div>
             </div>
@@ -105,12 +95,7 @@
     <footer class="site-footer">
         <div class="footer-content">
             <div class="footer-logo">🕉 Gita Wisdom</div>
-            <p class="footer-text">
-                &copy; 2026 Divine Dialogue Project. All Rights Reserved.
-            </p>
-            <p class="footer-text">
-                Designed with <span class="footer-heart">❤</span> & Devotion by <strong><a href="https://www.linkedin.com/in/ramavath-rahul-12542926a/" target="_blank" style="color: #fdfbf7;">Ramavath Rahul</a></strong>
-            </p>
+            <p class="footer-text">&copy; 2026 Divine Dialogue Project. All Rights Reserved.</p>
         </div>
     </footer>
 
@@ -126,58 +111,37 @@
         </div>
     </div>
 
-    <div id="cardDeckOverlay" class="card-overlay">
-        <div class="card-arena">
-            <h2 class="arena-title">Choose Your Destiny</h2>
-            <p class="arena-subtitle">Krishna has a message for you. Trust your intuition.</p>
-            
-            <div class="cards-container">
-                <div class="mystic-card" onclick="revealCard(this)">
-                    <div class="card-inner">
-                        <div class="card-front"><span class="om-symbol">🕉️</span></div>
-                        <div class="card-back"><span class="reveal-text">Divine Will</span></div>
-                    </div>
-                </div>
-                <div class="mystic-card" onclick="revealCard(this)">
-                    <div class="card-inner">
-                        <div class="card-front"><span class="om-symbol">🕉️</span></div>
-                        <div class="card-back"><span class="reveal-text">Karma</span></div>
-                    </div>
-                </div>
-                <div class="mystic-card" onclick="revealCard(this)">
-                    <div class="card-inner">
-                        <div class="card-front"><span class="om-symbol">🕉️</span></div>
-                        <div class="card-back"><span class="reveal-text">Moksha</span></div>
-                    </div>
-                </div>
-            </div>
-            
-            <button class="close-deck-btn" onclick="closeCardDeck()">Close</button>
-        </div>
-    </div>
-
-    <button class="chatbot-fab" onclick="toggleChat()">
-        🪈
-    </button>
-
     <div class="chatbot-container" id="chatbotContainer">
+        <div id="chatResizer" class="chat-resizer">
+            <div class="resizer-bar"></div>
+        </div>
         <div class="chat-header">
             <div class="chat-title">
                 <span style="font-size: 1.5rem;">🪈</span>
                 <span>Krishna's Counsel</span>
             </div>
-            <span class="chat-close" onclick="toggleChat()">&times;</span>
+            <span class="chat-close" onclick="closeChat()">&times;</span>
         </div>
-        
         <div class="chat-body" id="chatBody">
             <div class="chat-message bot-message">
                 <p>Radhe Radhe! 🙏 <br>I am here to guide you. Tell me what burdens your heart?</p>
             </div>
         </div>
-        
         <div class="chat-input-area">
             <input type="text" id="chatInput" placeholder="Type your worry..." onkeypress="handleChatEnter(event)">
             <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <div id="cardDeckOverlay" class="card-overlay">
+        <div class="card-arena">
+            <h2 class="arena-title">Choose Your Destiny</h2>
+            <div class="cards-container">
+                <div class="mystic-card" onclick="revealCard(this)"><div class="card-inner"><div class="card-front"><span class="om-symbol">🕉️</span></div><div class="card-back"><span class="reveal-text">Divine Will</span></div></div></div>
+                <div class="mystic-card" onclick="revealCard(this)"><div class="card-inner"><div class="card-front"><span class="om-symbol">🕉️</span></div><div class="card-back"><span class="reveal-text">Karma</span></div></div></div>
+                <div class="mystic-card" onclick="revealCard(this)"><div class="card-inner"><div class="card-front"><span class="om-symbol">🕉️</span></div><div class="card-back"><span class="reveal-text">Moksha</span></div></div></div>
+            </div>
+            <button class="close-deck-btn" onclick="closeCardDeck()">Close</button>
         </div>
     </div>
 
