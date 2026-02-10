@@ -3,12 +3,15 @@ import json
 import random
 import os
 import unicodedata
+import base64
+import io
 from google import genai 
+from gtts import gTTS 
 
 app = Flask(__name__)
 
 # --- 🔑 CONFIGURE GEMINI AI ---
-GEMINI_API_KEY = "AIzaSyCCIk6DAQuyGHNwxm9K5BwpvCxzp4fiSu0" 
+GEMINI_API_KEY = "AIzaSyDY6_kQ2om18IZFOBHyH-PLf92_G_LqKs4" 
 
 try:
     client = genai.Client(api_key=GEMINI_API_KEY)
@@ -40,15 +43,23 @@ def normalize_text(text):
 
 # --- HELPER: FIND SPECIFIC VERSE ---
 def get_specific_verse(chapter, verse):
-    chap = next((c for c in GITA_DATA if c["chapter_number"] == chapter), None)
+    chap_str = str(chapter)
+    verse_str = str(verse)
+
+    chap = next((c for c in GITA_DATA if str(c.get("chapter_number")) == chap_str), None)
+    
     if chap:
-        v = next((v for v in chap["verses"] if v["verse"] == verse), None)
+        v = next((v for v in chap.get("verses", []) if str(v.get("verse")) == verse_str), None)
+        
         if v:
             return {
-                "text": v["text"],
-                "chapter": chapter,
+                "chapter_number": chapter,
+                "title": chap.get("title", ""),
                 "verse": verse,
-                "sanskrit": v.get("sanskrit", "")
+                "text": v.get("text", ""),
+                "translation": v.get("text", ""),
+                "sanskrit": v.get("sanskrit", ""),
+                "transliteration": v.get("transliteration", "")
             }
     return None
 
@@ -68,15 +79,15 @@ def chapters_page():
         chapters_summary.append({
             "chapter_number": c["chapter_number"],
             "title": c["title"],
-            "translation": c["translation"],
-            "summary": c["summary"],
-            "verse_count": len(c["verses"]) 
+            "translation": c.get("translation", ""),
+            "summary": c.get("summary", ""),
+            "verse_count": len(c.get("verses", [])) 
         })
     return render_template('chapters.html', chapters=chapters_summary)
 
 @app.route('/api/chapter/<int:chapter_num>')
 def get_chapter_text(chapter_num):
-    chapter = next((c for c in GITA_DATA if c["chapter_number"] == chapter_num), None)
+    chapter = next((c for c in GITA_DATA if str(c["chapter_number"]) == str(chapter_num)), None)
     if chapter:
         return jsonify(chapter)
     return jsonify({"error": "Chapter not found"}), 404
@@ -91,7 +102,7 @@ def search_verses():
     
     results = []
     for chapter in GITA_DATA:
-        for verse in chapter['verses']:
+        for verse in chapter.get('verses', []):
             text_norm = normalize_text(verse.get('text', ''))
             translit_norm = normalize_text(verse.get('transliteration', ''))
             sanskrit_norm = normalize_text(verse.get('sanskrit', ''))
@@ -111,7 +122,7 @@ def search_verses():
 def oracle():
     all_verses_flat = []
     for chapter in GITA_DATA:
-        for verse in chapter['verses']:
+        for verse in chapter.get('verses', []):
             verse_obj = {
                 "chapter_number": chapter['chapter_number'],
                 "title": chapter['title'],
@@ -141,14 +152,42 @@ def get_mood_verse(emotion):
     emotion = emotion.lower()
     possible_verses = MOOD_MAP.get(emotion)
     if not possible_verses: return jsonify({"error": "Emotion not found"}), 404
-    
     target = random.choice(possible_verses)
-    return jsonify(get_specific_verse(target["chapter"], target["verse"]))
+    verse_data = get_specific_verse(target["chapter"], target["verse"])
+    if verse_data:
+        return jsonify(verse_data)
+    else:
+        return jsonify({"error": "Verse not found"}), 404
 
-# --- 🤖 REALTIME KRISHNA CHAT ---
+# --- 🗣️ VANI (STABLE gTTS) ---
+@app.route('/api/speak', methods=['POST'])
+def speak_verse():
+    data = request.json
+    text_to_speak = data.get('text', '')
+
+    if not text_to_speak:
+        return jsonify({"error": "No text provided"}), 400
+
+    try:
+        # Using Google TTS (Reliable)
+        tts = gTTS(text=text_to_speak, lang='en', tld='co.in', slow=False)
+        
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        
+        audio_data = base64.b64encode(fp.read()).decode('utf-8')
+        return jsonify({"audio": audio_data})
+
+    except Exception as e:
+        print(f"❌ TTS Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+# --- 🤖 REALTIME KRISHNA CHAT (TEXT ONLY) ---
 @app.route('/api/chat', methods=['POST'])
 def chat_with_krishna():
-    user_message = request.json.get('message', '')
+    data = request.json
+    user_message = data.get('message', '') if data else ''
     
     if not user_message:
         return jsonify({"reply": "My friend, silence is also an answer, but tell me what is on your mind?"})
@@ -163,7 +202,7 @@ def chat_with_krishna():
     """
 
     try:
-        # We use 'gemini-2.5-flash' here
+        # Using Gemini 2.5 Flash as requested
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=f"{system_instruction}\n\nUser Question: {user_message}\nKrishna's Answer:"
