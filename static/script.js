@@ -1,3 +1,9 @@
+/* =========================================
+   1. GLOBAL VARIABLES & INIT
+   ========================================= */
+let audioContext = null;
+let currentSource = null; // Tracks the currently playing speech
+
 // 1. Staggered Entrance Animation on Load
 document.addEventListener("DOMContentLoaded", () => {
     const cards = document.querySelectorAll('.chapter-card');
@@ -19,49 +25,37 @@ document.addEventListener("DOMContentLoaded", () => {
    ========================================= */
 const body = document.body;
 let mouseX = 0, mouseY = 0;
-let gyroX = 0, gyroY = 0;
 
 // 1. DESKTOP PARALLAX (Mouse Move)
 document.addEventListener("mousemove", (e) => {
     if (!body.classList.contains("cosmic-mode")) return;
-    
-    // Normalize coordinates from center of screen (-1 to +1)
     mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
     mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
-    
-    // Update CSS variables for smooth movement
-    updateCosmicPosition(mouseX * 20, mouseY * 20); // 20px max movement
+    updateCosmicPosition(mouseX * 20, mouseY * 20); 
 });
 
 // 2. MOBILE PARALLAX (Gyroscope)
 if (window.DeviceOrientationEvent) {
     window.addEventListener("deviceorientation", (e) => {
         if (!body.classList.contains("cosmic-mode")) return;
-        
-        // Beta: Front/Back tilt (-180 to 180). Gamma: Left/Right tilt (-90 to 90)
         let tiltX = e.gamma || 0; 
         let tiltY = e.beta || 0;
-        
-        // Limit range to prevent extreme scrolling
         tiltX = Math.max(-45, Math.min(45, tiltX));
         tiltY = Math.max(-45, Math.min(45, tiltY));
-
-        // Update CSS variables
         updateCosmicPosition(tiltX, tiltY); 
     });
 }
 
-// 3. Update Function
 function updateCosmicPosition(x, y) {
-    // We use requestAnimationFrame for performance
     requestAnimationFrame(() => {
         body.style.setProperty('--move-x', `${x}px`);
         body.style.setProperty('--move-y', `${y}px`);
     });
 }
 
-
-// 2. Open Chapter Modal
+/* =========================================
+   2. CHAPTER MODAL LOGIC
+   ========================================= */
 function openChapter(chapterNum) {
     const modal = document.getElementById("readingModal");
     const modalTitle = document.getElementById("modalTitle");
@@ -71,7 +65,7 @@ function openChapter(chapterNum) {
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
 
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Loading Divine Verses...</div>';
+    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--accent-secondary);">Loading Divine Verses...</div>';
 
     fetch(`/api/chapter/${chapterNum}`)
         .then(response => response.json())
@@ -83,12 +77,10 @@ function openChapter(chapterNum) {
                 modalSubtitle.innerText = data.translation;
                 
                 let versesHtml = "";
-                
                 data.verses.forEach(v => {
                     const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
                     const safeText = v.text.replace(/"/g, '&quot;');
                     const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
-                    const safeTitle = data.title.replace(/"/g, '&quot;');
                     
                     versesHtml += `
                         <div class="verse-item">
@@ -101,14 +93,12 @@ function openChapter(chapterNum) {
                                 <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
                                     🔊 Listen
                                 </button>
-                                
                                 <button class="action-btn" onclick="copyVerse('${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
                                     📋 Copy
                                 </button>
-                                
                                 <button class="action-btn" onclick="triggerDownload(this)"
                                     data-chapter="${data.chapter_number}"
-                                    data-title="${safeTitle}"
+                                    data-title="${data.title.replace(/"/g, '&quot;')}"
                                     data-verse="${v.verse}"
                                     data-sanskrit="${safeSanskrit}"
                                     data-transliteration="${safeTransliteration}"
@@ -128,18 +118,30 @@ function openChapter(chapterNum) {
         });
 }
 
-// 3. Close Modal
+// --- FIX: STOP AUDIO ON CLOSE ---
 function closeChapter() {
-    // Stop visualizer when closing
+    const modal = document.getElementById("readingModal");
+    
+    // 1. Force Stop Audio if playing
+    if (currentSource) {
+        try {
+            currentSource.stop();
+        } catch(e) {
+            // Ignore error if already stopped
+        }
+        currentSource = null;
+    }
+
+    // 2. Turn off Visualizer
     const visualizer = document.getElementById('globalVisualizer');
     if(visualizer) visualizer.classList.remove('active');
 
-    const modal = document.getElementById("readingModal");
+    // 3. Hide Modal
     modal.classList.remove("show");
     setTimeout(() => { modal.style.display = "none"; }, 400);
 }
 
-// 4. Close on Click Outside
+// Close on Click Outside
 window.onclick = function(event) {
     const modal = document.getElementById("readingModal");
     if (event.target == modal) {
@@ -150,43 +152,40 @@ window.onclick = function(event) {
 /* =========================================
    🔮 MYSTIC CARD LOGIC
    ========================================= */
-
-// 1. Open the Card Deck
 function askOracle() {
     const overlay = document.getElementById('cardDeckOverlay');
     overlay.style.display = 'flex';
-    setTimeout(() => {
-        overlay.classList.add('show');
-    }, 10);
-    
+    setTimeout(() => { overlay.classList.add('show'); }, 10);
     document.querySelectorAll('.mystic-card').forEach(card => {
         card.classList.remove('flipped');
     });
 }
 
-// 2. Close the Deck
 function closeCardDeck() {
     const overlay = document.getElementById('cardDeckOverlay');
     overlay.classList.remove('show');
-    setTimeout(() => {
-        overlay.style.display = 'none';
-    }, 500);
+    setTimeout(() => { overlay.style.display = 'none'; }, 500);
 }
 
-// 3. Reveal a Card
 function revealCard(cardElement) {
     if (cardElement.classList.contains('flipped')) return;
-
     cardElement.classList.add('flipped');
-
     setTimeout(() => {
         fetchOracleVerse();
         closeCardDeck();
     }, 1000);
 }
 
-// 4. Fetch the Verse
 function fetchOracleVerse() {
+    openChapterModalForSingleVerse('/api/oracle', "Consulting the stars...");
+}
+
+function askMood(emotion) {
+    openChapterModalForSingleVerse(`/api/mood/${emotion}`, "Finding comfort for your soul...");
+}
+
+// Helper to reuse modal logic for single verse results (Oracle/Mood)
+function openChapterModalForSingleVerse(apiUrl, loadingMsg) {
     const modal = document.getElementById("readingModal");
     const modalTitle = document.getElementById("modalTitle");
     const modalSubtitle = document.getElementById("modalSubtitle");
@@ -194,20 +193,21 @@ function fetchOracleVerse() {
 
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
-    
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px;">Consulting the stars...</div>';
+    modalText.innerHTML = `<div style="text-align:center; padding: 50px;">${loadingMsg}</div>`;
 
-    fetch('/api/oracle')
+    fetch(apiUrl)
         .then(response => response.json())
         .then(data => {
+            if(data.error) {
+                modalText.innerHTML = "<p>The connection is faint...</p>";
+                return;
+            }
             modalTitle.innerText = `Guidance from Chapter ${data.chapter_number}`;
-            modalSubtitle.innerText = data.title;
+            modalSubtitle.innerText = data.title || "Divine Wisdom";
             
             const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
             const safeText = data.text.replace(/"/g, '&quot;');
-            const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
-            const safeTitle = data.title.replace(/"/g, '&quot;');
-
+            
             modalText.innerHTML = `
                 <div class="verse-item" style="border:none;">
                     <span class="verse-number">Verse ${data.verse}</span>
@@ -224,10 +224,10 @@ function fetchOracleVerse() {
                         </button>
                         <button class="action-btn" onclick="triggerDownload(this)"
                             data-chapter="${data.chapter_number}"
-                            data-title="${safeTitle}"
+                            data-title="${data.title}"
                             data-verse="${data.verse}"
                             data-sanskrit="${safeSanskrit}"
-                            data-transliteration="${safeTransliteration}"
+                            data-transliteration="${data.transliteration || ''}"
                             data-translation="${safeText}">
                             📸 Download
                         </button>
@@ -235,83 +235,13 @@ function fetchOracleVerse() {
                 </div>
             `;
         })
-        .catch(error => {
-            console.error('Error:', error);
-            modalText.innerHTML = "<p>The connection to the divine is faint... try again.</p>";
-        });
-}
-
-// --- MOOD DOCTOR FUNCTION ---
-function askMood(emotion) {
-    const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
-    const modalText = document.getElementById("modalText");
-
-    modal.style.display = "block";
-    setTimeout(() => modal.classList.add("show"), 10);
-
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; font-size: 1.5rem; color: var(--saffron);">Finding comfort for your soul...</div>';
-    modalTitle.innerText = "The Divine Remedy";
-    modalSubtitle.innerText = `For when you are feeling ${emotion}`;
-
-    fetch(`/api/mood/${emotion}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                modalText.innerHTML = "<p>Peace be with you. Try again later.</p>";
-            } else {
-                modalTitle.innerText = `Chapter ${data.chapter_number}: ${data.title}`;
-                
-                const safeSanskrit = data.sanskrit ? data.sanskrit.replace(/"/g, '&quot;') : "";
-                const safeText = data.text.replace(/"/g, '&quot;');
-                const safeTransliteration = data.transliteration ? data.transliteration.replace(/"/g, '&quot;') : "";
-                const safeTitle = data.title.replace(/"/g, '&quot;');
-
-                modalText.innerHTML = `
-                    <div style="text-align: center; padding: 2rem 0;">
-                        <span style="font-family: 'Cinzel', serif; color: var(--saffron); font-size: 1.2rem; display: block; margin-bottom: 20px;">
-                            Verse ${data.verse}
-                        </span>
-                        <div class="sanskrit-text" style="font-size: 1.5rem;">${data.sanskrit || ''}</div>
-                        <div class="transliteration-text">${data.transliteration || ''}</div>
-                        <p style="font-size: 1.4rem; line-height: 1.8; font-style: italic; color: var(--krishna-blue); margin-top: 20px;">
-                            "${data.text}"
-                        </p>
-                        
-                        <div class="action-bar">
-                            <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">
-                                🔊 Listen
-                            </button>
-                            <button class="action-btn" onclick="copyVerse('${data.verse}', this.getAttribute('data-text'))" data-text="${safeText}">
-                                📋 Copy
-                            </button>
-                            
-                            <button class="action-btn" onclick="triggerDownload(this)"
-                                data-chapter="${data.chapter_number}"
-                                data-title="${safeTitle}"
-                                data-verse="${data.verse}"
-                                data-sanskrit="${safeSanskrit}"
-                                data-transliteration="${safeTransliteration}"
-                                data-translation="${safeText}">
-                                📸 Download
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            modalText.innerHTML = "<p>Connection error.</p>";
-        });
+        .catch(err => modalText.innerHTML = "<p>Error connecting.</p>");
 }
 
 // --- COSMIC TOGGLE LOGIC ---
 function toggleCosmicMode() {
     const body = document.body;
     const toggle = document.getElementById("cosmicToggle");
-    
     if (toggle.checked) {
         body.classList.add("cosmic-mode");
         localStorage.setItem("theme", "cosmic"); 
@@ -326,8 +256,6 @@ function copyVerse(verseNum, textToCopy) {
     const fullText = `Bhagavad Gita Verse ${verseNum}: "${textToCopy}"`;
     navigator.clipboard.writeText(fullText).then(() => {
         showToast("Verse Copied to Clipboard! 📋"); 
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
     });
 }
 
@@ -342,25 +270,21 @@ function showToast(message) {
 }
 
 /* =========================================
-   🗣️ VANI (DIVINE AUDIO ENGINE) - FIXED
+   3. 🗣️ VANI (AUDIO ENGINE) - FIXED (Visualizer + Stop Logic + Effects)
    ========================================= */
-let audioContext;
-let currentSource;
-
 function playAudio(text) {
     const visualizer = document.getElementById('globalVisualizer');
     
-    // --- 🛠️ AUDIO CLEANING FIX ---
-    // 1. Remove text between double bars (||...||) e.g., ||16-21||
-    // 2. Remove any remaining single bars
-    // 3. Remove digits
+    // Clean text (Remove pipes || and numbers for better speech)
     let cleanText = text.replace(/\|\|.*?\|\|/g, "") 
                         .replace(/\|/g, " ")
                         .replace(/[0-9]/g, "")
                         .trim();
 
+    // 1. Activate Visualizer Immediately
     if(visualizer) visualizer.classList.add('active');
     
+    // 2. Fetch Audio
     fetch('/api/speak', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -369,30 +293,36 @@ function playAudio(text) {
     .then(response => response.json())
     .then(async data => {
         if (data.error) {
-            console.error("TTS Error:", data.error);
             showToast("Krishna's voice is faint...");
             if(visualizer) visualizer.classList.remove('active');
             return;
         }
 
+        // Initialize Audio Context if needed
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
 
-        if (currentSource) { try { currentSource.stop(); } catch(e){} }
+        // Stop any currently playing audio
+        if (currentSource) {
+            try { currentSource.stop(); } catch(e){}
+        }
 
+        // Decode & Play
         const audioBytes = Uint8Array.from(atob(data.audio), c => c.charCodeAt(0));
         const audioBuffer = await audioContext.decodeAudioData(audioBytes.buffer);
 
         const source = audioContext.createBufferSource();
         source.buffer = audioBuffer;
-
-        // PITCH DROP
+        
+        // --- RESTORED EFFECTS (Speed & Reverb) ---
+        // 1. Slow down for divine effect
         source.playbackRate.value = 0.85; 
 
+        // 2. Create Reverb Effect
         const convolver = audioContext.createConvolver();
         const rate = audioContext.sampleRate;
-        const length = rate * 1.5; 
+        const length = rate * 1.5; // 1.5 seconds of reverb tail
         const impulse = audioContext.createBuffer(2, length, rate);
         const impulseL = impulse.getChannelData(0);
         const impulseR = impulse.getChannelData(1);
@@ -404,11 +334,12 @@ function playAudio(text) {
         }
         convolver.buffer = impulse;
 
+        // 3. Audio Graph: Source -> (Dry + Wet) -> Destination
         const dryNode = audioContext.createGain();
         const wetNode = audioContext.createGain();
         
-        dryNode.gain.value = 0.8; 
-        wetNode.gain.value = 0.3; 
+        dryNode.gain.value = 0.8; // Original Sound
+        wetNode.gain.value = 0.3; // Reverb Volume
 
         source.connect(dryNode);
         source.connect(convolver);
@@ -417,11 +348,14 @@ function playAudio(text) {
         dryNode.connect(audioContext.destination);
         wetNode.connect(audioContext.destination);
 
+        // Start Playback
         source.start(0);
-        currentSource = source;
+        currentSource = source; // Save reference so we can stop it on close
 
+        // Deactivate Visualizer when audio ends
         source.onended = () => {
             if(visualizer) visualizer.classList.remove('active');
+            currentSource = null;
         };
     })
     .catch(err => {
@@ -434,14 +368,14 @@ function playAudio(text) {
    📸 DOWNLOAD IMAGE FEATURE
    ========================================= */
 function triggerDownload(btn) {
-    const chapNum = btn.getAttribute('data-chapter');
-    const chapTitle = btn.getAttribute('data-title');
-    const verseNum = btn.getAttribute('data-verse');
-    const sanskrit = btn.getAttribute('data-sanskrit');
-    const transliteration = btn.getAttribute('data-transliteration');
-    const translation = btn.getAttribute('data-translation');
-    
-    downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation);
+    downloadVerseImage(
+        btn.getAttribute('data-chapter'),
+        btn.getAttribute('data-title'),
+        btn.getAttribute('data-verse'),
+        btn.getAttribute('data-sanskrit'),
+        btn.getAttribute('data-transliteration'),
+        btn.getAttribute('data-translation')
+    );
 }
 
 function downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliteration, translation) {
@@ -478,103 +412,77 @@ function downloadVerseImage(chapNum, chapTitle, verseNum, sanskrit, transliterat
    🔍 DHARMA SEARCH ENGINE
    ========================================= */
 function handleEnter(event) {
-    if (event.key === "Enter") {
-        performSearch();
-    }
+    if (event.key === "Enter") performSearch();
 }
 
 function performSearch() {
     const query = document.getElementById("searchInput").value.trim();
     if (!query) return;
-
+    
+    // Reuse the Oracle logic to display search results in the modal for now
     const modal = document.getElementById("readingModal");
-    const modalTitle = document.getElementById("modalTitle");
-    const modalSubtitle = document.getElementById("modalSubtitle");
     const modalText = document.getElementById("modalText");
-
+    const modalTitle = document.getElementById("modalTitle");
+    
     modal.style.display = "block";
     setTimeout(() => modal.classList.add("show"), 10);
-
-    modalText.innerHTML = '<div style="text-align:center; padding: 50px; color: var(--saffron);">Searching...</div>';
-    modalTitle.innerText = `Search Results`;
-    modalSubtitle.innerText = `Matches for "${query}"`;
+    modalTitle.innerText = "Search Results";
+    document.getElementById("modalSubtitle").innerText = `Query: "${query}"`;
+    modalText.innerHTML = '<div style="text-align:center;">Searching scriptures...</div>';
 
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.length === 0) {
-                modalText.innerHTML = `
-                    <div style="text-align:center; padding: 30px;">
-                        <p>No verses found containing "${query}".</p>
-                    </div>`;
-            } else {
-                let versesHtml = `<p style="text-align:center; margin-bottom: 20px;">${data.length} verses found</p>`;
-                
-                data.forEach(v => {
-                    const safeSanskrit = v.sanskrit ? v.sanskrit.replace(/"/g, '&quot;') : "";
-                    const safeText = v.text.replace(/"/g, '&quot;');
-                    const safeTransliteration = v.transliteration ? v.transliteration.replace(/"/g, '&quot;') : "";
-                    const safeTitle = v.chapter_title.replace(/"/g, '&quot;'); 
-                    
-                    versesHtml += `
-                        <div class="verse-item">
-                            <span class="verse-number">Chapter ${v.chapter_number}, Verse ${v.verse}</span>
-            
-                            <div class="sanskrit-text">${v.sanskrit}</div>
-                            <div class="transliteration-text">${v.transliteration}</div>
-                            <p class="translation-text">${v.text}</p>
-                            
-                            <div class="action-bar">
-                                <button class="action-btn" onclick="playAudio(this.getAttribute('data-text'))" data-text="${safeSanskrit}">🔊 Listen</button>
-                                <button class="action-btn" onclick="copyVerse('${v.chapter_number}.${v.verse}', this.getAttribute('data-text'))" data-text="${safeText}">📋 Copy</button>
-                                <button class="action-btn" onclick="triggerDownload(this)"
-                                    data-chapter="${v.chapter_number}"
-                                    data-title="${safeTitle}"
-                                    data-verse="${v.verse}"
-                                    data-sanskrit="${safeSanskrit}"
-                                    data-transliteration="${safeTransliteration}"
-                                    data-translation="${safeText}">📸 Download</button>
-                            </div>
-                        </div>
-                    `;
-                });
-                modalText.innerHTML = versesHtml;
-            }
-        });
+    .then(res => res.json())
+    .then(data => {
+        if(data.length === 0) {
+            modalText.innerHTML = "<p style='text-align:center'>No verses found.</p>";
+        } else {
+            let html = "";
+            data.forEach(v => {
+                html += `
+                <div class="verse-item">
+                    <span class="verse-number">Chapter ${v.chapter_number}, Verse ${v.verse}</span>
+                    <div class="sanskrit-text">${v.sanskrit}</div>
+                    <p class="translation-text">${v.text}</p>
+                    <div class="action-bar">
+                        <button class="action-btn" onclick="playAudio('${v.sanskrit.replace(/'/g,"")}')">🔊 Listen</button>
+                    </div>
+                </div>`;
+            });
+            modalText.innerHTML = html;
+        }
+    });
 }
 
 /* =========================================
-   🤖 KRISHNA CHATBOT LOGIC (TEXT ONLY + RESIZABLE)
+   🤖 KRISHNA CHATBOT LOGIC
    ========================================= */
 const chatContainer = document.getElementById("chatbotContainer");
 const resizer = document.getElementById("chatResizer");
 
 function openChat() {
     chatContainer.style.display = "flex";
-    setTimeout(() => {
-        chatContainer.classList.add("active");
-    }, 10);
+    setTimeout(() => { chatContainer.classList.add("active"); }, 10);
     document.getElementById("chatInput").focus();
 }
 
 function closeChat() {
     chatContainer.classList.remove("active");
-    setTimeout(() => {
-        chatContainer.style.display = "none";
-    }, 400); 
+    setTimeout(() => { chatContainer.style.display = "none"; }, 400); 
 }
 
 // RESIZING LOGIC
 let isResizing = false;
 let startY, startHeight;
 
-resizer.addEventListener('mousedown', initResize);
-document.addEventListener('mousemove', resize);
-document.addEventListener('mouseup', stopResize);
+if(resizer){
+    resizer.addEventListener('mousedown', initResize);
+    document.addEventListener('mousemove', resize);
+    document.addEventListener('mouseup', stopResize);
 
-resizer.addEventListener('touchstart', initResize, { passive: false });
-document.addEventListener('touchmove', resize, { passive: false });
-document.addEventListener('touchend', stopResize);
+    resizer.addEventListener('touchstart', initResize, { passive: false });
+    document.addEventListener('touchmove', resize, { passive: false });
+    document.addEventListener('touchend', stopResize);
+}
 
 function initResize(e) {
     isResizing = true;
@@ -593,9 +501,8 @@ function resize(e) {
     let newHeight = startHeight + deltaY;
 
     const windowHeight = window.innerHeight;
-    const navbarHeight = 80; 
-    const minHeight = 200;   
-    const maxHeight = windowHeight - navbarHeight;
+    const maxHeight = windowHeight - 80;
+    const minHeight = 200;
 
     if (newHeight > maxHeight) newHeight = maxHeight;
     if (newHeight < minHeight) newHeight = minHeight;
