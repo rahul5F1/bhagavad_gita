@@ -92,110 +92,121 @@
 
 
         /* =========================================
-           1. ☁️ ORGANIC MORNING FOG & RUBBING
+           1. 🌪️ 3D VOLUMETRIC FOG ENGINE
            ========================================= */
         const canvas = document.getElementById('fogCanvas');
         const ctx = canvas.getContext('2d');
         const instruction = document.getElementById('fogInstruction');
         const overlay = document.getElementById('landingOverlay');
         
-        // 1. Offscreen canvas for the "Eraser Strokes"
-        const maskCanvas = document.createElement('canvas');
-        const maskCtx = maskCanvas.getContext('2d');
-
         let width, height;
+        let particles = [];
         let isFogCleared = false;
-        let eraseCount = 0;
         
-        // 2. Cloud Particles Array
-        const clouds = [];
-        const cloudCount = 45; // Increased density for "Morning" feel
+        // Mouse/Touch Tracker
+        const mouse = { x: -1000, y: -1000, active: false };
 
-        function resizeCanvas() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            maskCanvas.width = width;
-            maskCanvas.height = height;
-            
-            // Mask is fully white (opaque) to start
-            maskCtx.fillStyle = '#ffffff';
-            maskCtx.fillRect(0, 0, width, height);
-            
-            initClouds();
-        }
-
-        function initClouds() {
-            clouds.length = 0;
-            for(let i=0; i<cloudCount; i++) {
-                clouds.push({
-                    x: Math.random() * width,
-                    y: Math.random() * height,
-                    r: 150 + Math.random() * 200, // Large soft puffs
-                    
-                    // ✨ ORGANIC DRIFT: Random directions, slow speed
-                    vx: (Math.random() - 0.5) * 0.4, 
-                    vy: (Math.random() - 0.5) * 0.2, 
-                    
-                    opacity: 0.5 + Math.random() * 0.4 // Varied transparency
-                });
+        class FogParticle {
+            constructor() {
+                this.reset(true); // true = start randomly on screen
             }
-        }
 
-        // 3. Render Loop
-        function renderFog() {
-            if (isFogCleared && canvas.style.opacity == "0") return;
+            reset(initial = false) {
+                // Random position
+                this.x = initial ? Math.random() * width : -100; 
+                this.y = Math.random() * height;
+                
+                // 3D Depth Factor (0.5 to 1.5)
+                // Larger clouds = Closer = Faster = More Transparent
+                this.depth = 0.5 + Math.random(); 
+                
+                this.radius = (100 + Math.random() * 200) * this.depth;
+                this.vx = (0.2 + Math.random() * 0.5) * this.depth; // Horizontal drift
+                this.vy = (Math.random() - 0.5) * 0.2; // Slight vertical wobble
+                
+                // Start fully opaque relative to depth
+                this.opacity = (0.3 + Math.random() * 0.4) * this.depth; 
+                this.maxOpacity = this.opacity;
+                this.fading = false;
+            }
 
-            // Clear Screen
-            ctx.clearRect(0, 0, width, height);
+            update() {
+                // 1. Move
+                this.x += this.vx;
+                this.y += this.vy;
 
-            // A. Draw Moving Clouds
-            clouds.forEach(c => {
-                // Move cloud
-                c.x += c.vx;
-                c.y += c.vy;
+                // 2. Loop Screen
+                if (this.x > width + this.radius) {
+                    this.x = -this.radius;
+                    this.y = Math.random() * height;
+                    this.opacity = this.maxOpacity; // Reset opacity when respawning
+                    this.fading = false;
+                }
 
-                // Infinite Wrapping (Smooth loop)
-                if(c.x < -c.r) c.x = width + c.r;
-                if(c.x > width + c.r) c.x = -c.r;
-                if(c.y < -c.r) c.y = height + c.r;
-                if(c.y > height + c.r) c.y = -c.r;
+                // 3. Interaction (Rubbing)
+                if (mouse.active && !this.fading) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    
+                    // If mouse touches cloud (Radius + Brush Size)
+                    if (dist < this.radius * 0.6) { 
+                        this.fading = true; // Start evaporating
+                    }
+                }
 
-                // Create soft radial gradient for puffiness
-                let g = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
-                g.addColorStop(0, `rgba(230, 240, 255, ${c.opacity})`); // Slightly blueish white for morning
-                g.addColorStop(1, "rgba(230, 240, 255, 0)");
+                // 4. Fade Out Logic
+                if (this.fading) {
+                    this.opacity -= 0.05;
+                    if (this.opacity < 0) this.opacity = 0;
+                }
+            }
+
+            draw() {
+                if (this.opacity <= 0.01) return;
+
+                const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                // Multi-stop gradient for fluffy look
+                g.addColorStop(0, `rgba(240, 245, 255, ${this.opacity})`);
+                g.addColorStop(0.4, `rgba(230, 240, 250, ${this.opacity * 0.6})`);
+                g.addColorStop(1, `rgba(255, 255, 255, 0)`);
 
                 ctx.fillStyle = g;
                 ctx.beginPath();
-                ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
                 ctx.fill();
-            });
-
-            // B. Apply Eraser Mask (Cut out holes)
-            // 'destination-out' removes pixels from the main canvas where the mask is drawn
-            ctx.globalCompositeOperation = 'destination-in';
-            ctx.drawImage(maskCanvas, 0, 0);
-            
-            // Reset for next frame
-            ctx.globalCompositeOperation = 'source-over';
-
-            requestAnimationFrame(renderFog);
+            }
         }
 
-        // 4. Rubbing Logic (Draws on the OFFSCREEN Mask)
-        function erase(x, y) {
+        function initFog() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            particles = [];
+            // Create 60 layers of clouds
+            for(let i=0; i<60; i++) {
+                particles.push(new FogParticle());
+            }
+        }
+
+        function animateFog() {
             if (isFogCleared) return;
+
+            ctx.clearRect(0, 0, width, height);
             
-            // Draw transparent circle on the mask (The Hole)
-            maskCtx.globalCompositeOperation = 'destination-out';
-            maskCtx.beginPath();
-            maskCtx.arc(x, y, 70, 0, Math.PI * 2);
-            maskCtx.fill();
+            // Check global clear condition
+            let activeParticles = 0;
             
-            eraseCount++;
-            // Check for clear condition
-            if (eraseCount % 10 === 0 && eraseCount > 200) {
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+                if (p.opacity > 0.1) activeParticles++;
+            });
+
+            // If 80% of fog is gone, clear the rest automatically
+            if (activeParticles < particles.length * 0.2) {
                 clearFogCompletely();
+            } else {
+                requestAnimationFrame(animateFog);
             }
         }
 
@@ -203,6 +214,7 @@
             if(isFogCleared) return;
             isFogCleared = true;
             
+            // Fade out canvas CSS
             canvas.style.transition = "opacity 2s ease"; 
             canvas.style.opacity = "0";
             
@@ -217,19 +229,32 @@
                 instruction.style.display = 'none'; 
             }, 2000);
             
-            createWarpStars(); // Init stars for the next interaction
+            // Init Warp Stars for next phase
+            createWarpStars(); 
         }
 
-        window.addEventListener('resize', resizeCanvas);
-        canvas.addEventListener('mousemove', (e) => erase(e.clientX, e.clientY));
-        canvas.addEventListener('touchmove', (e) => { 
-            e.preventDefault(); 
-            erase(e.touches[0].clientX, e.touches[0].clientY); 
+        // --- EVENTS ---
+        window.addEventListener('resize', initFog);
+        
+        // Touch/Mouse Tracking
+        function trackInput(x, y) {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.active = true;
+            // Auto reset active after 100ms to stop clearing if not moving
+            clearTimeout(mouse.timer);
+            mouse.timer = setTimeout(() => mouse.active = false, 100);
+        }
+
+        window.addEventListener('mousemove', e => trackInput(e.clientX, e.clientY));
+        window.addEventListener('touchmove', e => {
+            e.preventDefault(); // Stop scroll
+            trackInput(e.touches[0].clientX, e.touches[0].clientY);
         }, { passive: false });
 
-        // Init
-        resizeCanvas();
-        renderFog();
+        // Start
+        initFog();
+        animateFog();
 
 
         /* =========================================
