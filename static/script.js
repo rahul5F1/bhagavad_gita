@@ -317,7 +317,7 @@ function playAudio(text) {
         
         // --- RESTORED EFFECTS (Speed & Reverb) ---
         // 1. Slow down for divine effect
-        source.playbackRate.value = 0.85; 
+        source.playbackRate.value = 1.0; 
 
         // 2. Create Reverb Effect
         const convolver = audioContext.createConvolver();
